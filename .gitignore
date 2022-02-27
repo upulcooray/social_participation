@@ -33,6 +33,8 @@ vignettes/*.pdf
 
 /_targets/
 *_targets/
+/data/
+*_data/
 
 
 # Temporary files created by R markdown
