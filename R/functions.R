@@ -1,8 +1,8 @@
 
-data<- readRDS(file="data/selected")
-source("code/helper_functions.R")
-library(haven)
-library(tidyverse)
+# data<- readRDS(file="data/selected")
+# source("code/helper_functions.R")
+# library(haven)
+# library(tidyverse)
 
 get_descriptive_data <- function(data){
 
@@ -53,7 +53,8 @@ get_descriptive_data <- function(data){
      c2 = dplyr::if_else(C2==1,1,0),
      Sex = dplyr::if_else(Sex==1,1,0)) %>%
 
-   dplyr::select(A0_teeth:tidyr::last_col())
+   dplyr::select(A0_teeth:tidyr::last_col()) %>%
+   select(-Y1_any)
 
   base_vars <- df %>% dplyr::select(Age,Sex,dplyr::contains("0_")) %>% colnames()
   L1_vars <- df %>% dplyr::select(dplyr::contains("1_")) %>% colnames()
@@ -208,18 +209,14 @@ plot_missing <- function(df, by_var= "Y2", x_lab= "Categories of outcome variabl
 
 }
 
-
 # flow of participants
 flow_chart <- function(df,expo,out,base_cov,l1_cov){
-
-
 
   df_nomis_expo <- df %>% filter_at(vars(expo),~!is.na(.))
   df_nomis_out_expo <- df %>% filter_at(vars(c(expo,out)),~!is.na(.))
 
   df_nomis_base <- df_nomis_out_expo %>%filter_at(vars(base_cov),~!is.na(.))
   df_nomis_base_l1 <- df_nomis_out_expo %>%filter_at(vars(base_cov,l1_cov),~!is.na(.))
-
 
   # Number of eligible participants
   n_baseline <- nrow(df)
@@ -253,7 +250,8 @@ flow_chart <- function(df,expo,out,base_cov,l1_cov){
 
   n_at_2016 <- nrow(df_nomis_base_l1)
 
-  # ---------
+  # censoring ---------
+
 
   n_died_13 <- df_nomis_base %>% dplyr::filter(C1==5) %>% nrow()
 
@@ -274,11 +272,8 @@ flow_chart <- function(df,expo,out,base_cov,l1_cov){
   # n_died_16+ n_ineligible_16+ n_lost_16==c2_censored
 
 
-  # ---------
-  # Creating the flow chart
+  # Creating the flow chart ---------
   library(Gmisc, htmlTable,quietly = T)
-
-  # svglite(filename = "paper/figures/flowchart.svg")
 
   baseline <- Gmisc::boxGrob(glue::glue("Eligible baseline participants",
                                         "n = {txtInt(n_baseline)}",
@@ -328,7 +323,7 @@ flow_chart <- function(df,expo,out,base_cov,l1_cov){
                                  y = 0.35,x = 0.75)
 
 
-  grDevices::svg(filename = "paper/figures/flowchart.svg",width = 10,height = 12)
+  grDevices::svg(filename = "figures/flowchart.svg",width = 10,height = 12)
 
   grid::grid.newpage()
 
@@ -343,15 +338,13 @@ flow_chart <- function(df,expo,out,base_cov,l1_cov){
 
 }
 
-
 # Use analytic data for table 1
 get_analytic_data <- function(df){
 
   analytic_data <- df %>%
-    filter_at(vars(base_vars),~!is.na(.)) %>%       # dropped 20568
-    filter_at(vars(L1_vars),~!is.na(.)) %>%         # dropped 6703
-    dplyr::mutate_all(~dplyr::if_else(.==-99  ,NA_real_,.)) %>%
-    get_labelled_data ()
+    stats::na.omit() %>%
+    dplyr::mutate_all(~dplyr::if_else(.==-99 | .==-88 ,NA_real_,.)) %>%
+    get_labelled_data()
 
   return(analytic_data)
 
