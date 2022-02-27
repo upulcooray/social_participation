@@ -339,7 +339,7 @@ flow_chart <- function(df,expo,out,base_cov,l1_cov){
 }
 
 # Use analytic data for table 1
-get_analytic_data <- function(df){
+get_tab1_data <- function(df){
 
   analytic_data <- df %>%
     stats::na.omit() %>%
@@ -351,6 +351,24 @@ get_analytic_data <- function(df){
 }
 
 
+get_tmle_data <- function(df){
+
+  for_tmle <- df %>%
+    stats::na.omit() %>%
+    dplyr::mutate_all(~dplyr::if_else(.==-99 | .==-88 ,NA_real_,.))
+
+  make_dums <- for_tmle %>% na.omit() %>%
+    dplyr::select_if(function(x)
+      length(unique(x))< 7 & length(unique(x))>2) %>%
+    select(-contains("teeth")) %>%
+    colnames()
+
+  for_tmle %>%
+  fastDummies::dummy_cols(all_of(make_dums),
+                          remove_first_dummy = T,
+                          ignore_na = T,remove_selected_columns = T ) %>%
+    mutate_all(as.numeric)
+}
 
 
 
@@ -362,20 +380,6 @@ get_analytic_data <- function(df){
 # }
 
 
-get_tmle_data <- function(analytic_data){
-
-  make_dums <- analytic_data %>% na.omit() %>%
-    dplyr::select_if(function(x)
-      length(unique(x))< 7 & length(unique(x))>2) %>%
-    select(-contains("teeth")) %>%
-    colnames()
-
-  analytic_data %>%
-  fastDummies::dummy_cols(all_of(make_dums),
-                          remove_first_dummy = T,
-                          ignore_na = T ) %>%
-    mutate_all(as.numeric)
-}
 
 
 

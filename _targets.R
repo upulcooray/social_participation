@@ -60,33 +60,30 @@ list(
                         expo,out,base_cov,l1_cov))
   ,
 
-
-
-  # Create analytic data -----------------------------------------------------
-  tar_target(analytic_data,
-             get_analytic_data(descriptive_data),
+  # Table 1 --------------------------------------------------------------------
+  tar_target(tab1_data,
+             get_tab1_data(descriptive_data),
              format= "rds")
+
   ,
-  # Table 1 ------------------------------------------------------------------
   tar_target(table_1,
-             create_table1(df = analytic_data,
+             create_table1(df = tab1_data,
                            headvar = out,
                            rowvars = c(expo[1],base_cov),
                            headvar_na_level = "Censored",
                            file_name = "tables/table_1",
                            header = "Social participation in 2016"))
+  ,
+
+  # get a tmle ready data set-----------------------------------------------------------
+  # dummify all categorical variables/ all variables as numeric
+
+  tar_target(tmle_data,
+             get_tmle_data(descriptive_data),
+             format= "rds")
   # ,
 
-  #
-  # # Run mice & get dummies fir cat_vars---------------------------------------
-  # tar_target(mi_data,
-  #            run_mice(data = analytic_data,
-  #                     cat_vars= c('Y0_any'),
-  #                     m = 5) ,
-  #            format = "rds")
-  #
-  # ,
-  #
+
   # # Set-up TMLE --------------------------------------------------------------
   # tar_target(a, c("A0_teeth", "A1_teeth"))
   # ,
