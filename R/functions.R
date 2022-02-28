@@ -371,17 +371,12 @@ get_tmle_data <- function(df){
 }
 
 
-
 # library(tidyverse)
 # fun <- function(){
 #   a<-1
 #   b<-2
 #   lst(a,b)
 # }
-
-
-
-
 
 
 run_lmtp <- function(data,
@@ -430,4 +425,40 @@ run_lmtp <- function(data,
   }
 
   return(m)
+}
+
+
+# ---------------------------Function to get contrasts-------------------------
+
+get_contrast<- function(results_list,
+                        ref_d,
+                        d_max,...){
+
+  results_df <- data.frame()
+
+  for (i in 0:d_max){
+
+    j <- ref_d+1
+    k <- i+1
+
+
+    if (i!=ref_d){
+
+      m<- lmtp::lmtp_contrast(results_list[[k]],
+                              ref = results_list[[j]], ...)
+      vals <- m$vals %>%
+        dplyr::mutate(Estimand= glue::glue("d",{ref_d},"_vs_d", {i}))
+
+      results_df <- rbind(results_df, vals)
+    }
+
+  }
+
+  return(results_df %>%
+           dplyr::select(Estimand, theta, conf.low,
+                         conf.high, p.value, shift, ref) %>%
+           mutate(across(where(is.numeric), ~format(round(.,2),nsmall= 3)))
+
+  )
+
 }

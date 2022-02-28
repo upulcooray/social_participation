@@ -11,6 +11,29 @@ l1_cov <- c("L1_inc", "L1_den", "L1_mari", "L1_srh")
 expo <- c("A0_teeth","A1_teeth")
 out <- "Y2"
 
+
+d0 <-  NULL
+
+d1 <-  function(data, trt) {
+  (data[[trt]]==1)*data[[trt]]+ (data[[trt]]!=1)* 1
+}
+
+d2 <-  function(data, trt) {
+  (data[[trt]]==2)*data[[trt]]+ (data[[trt]]!=2)* 2
+}
+
+d3 <-  function(data, trt) {
+  (data[[trt]]==3)*data[[trt]]+ (data[[trt]]!=3)* 3
+}
+
+d4 <-  function(data, trt) {
+  (data[[trt]]==4)*data[[trt]]+ (data[[trt]]!=4)* 4
+}
+
+
+
+
+
 # Set target-specific options such as packages-----------------------------------
 tar_option_set(packages = c("tidyverse", "haven",
                             "Gmisc", "htmlTable",
@@ -99,6 +122,9 @@ list(
                       colnames(tmle_data %>% select(contains("L1")))))
   ,
 
+  tar_target(cens, c("c1","c2"))
+  ,
+
   tar_target(sl_lib, c("SL.glm", "SL.xgboost", "SL.nnet"))
 
   ,
@@ -109,6 +135,7 @@ list(
                   baseline = w ,
                   time_vary=tv,
                   outcome_type = "binomial",
+                  cens = cens,
                   k=0
                   # ,
                   # learners_outcome = sl_lib,
@@ -118,120 +145,22 @@ list(
 
   # Define shift functions to shift exposure----------------------------------
 
-  tar_target(d1,
-             function(data, trt) {
-               (data[[trt]]==1)*data[[trt]]+
-                 (data[[trt]]!=1)* 1})
-  ,
-  tar_target(d2,
-             function(data, trt) {
-               (data[[trt]]==2)*data[[trt]]+
-                 (data[[trt]]!=2)* 2})
-  ,
-  tar_target(d3,
-             function(data, trt) {
-               (data[[trt]]==3)*data[[trt]]+
-                 (data[[trt]]!=3)* 3})
-  ,
-  tar_target(d4,
-             function(data, trt) {
-               (data[[trt]]==4)*data[[trt]]+
-                 (data[[trt]]!=4)* 4})
-  ,
-  tar_target(d5,
-             function(data, trt) {
-               (data[[trt]]- 1 >= 1) * (data[[trt]] -1) +
-                 (data[[trt]] - 1 < 1) * data[[trt]] })
 
-  # ,
-  #
-  # tar_target(table2,  # a .docx file will be created in the working folder
-  #            create_table1(formula=
-  #                            as.formula(A1_lbp ~      # header variable
-  #                                         A0_lbp
-  #                            ),
-  #                          df=tmle_df,
-  #                          n_cat= 5,   # number of categories in the head variable
-  #                          file_name= "table_2",
-  #                          header = "Changes in low back pain over two years"),
-  #            format = 'file')
-  #
-  # ,
-  #
-  #
-  # # Set-up TMLE ----------------------------------------------------------------
-  # tar_target(a, c("A0_lbp", "A1_lbp"))
-  # ,
-  # tar_target(y, paste0("y", 1:2))
-  # ,
-  # tar_target(w, tmle_df %>% select(starts_with("W0")) %>% names())
-  # ,
-  # tar_target(l0, tmle_df %>% select(starts_with("L0")) %>% names())
-  # ,
-  # tar_target(l1, tmle_df %>% select(starts_with("L1")) %>% names())
-  # ,
-  # tar_target(tv, list(l0,l1))
-  # ,
-  # tar_target(cens, c("c1","c2"))
-  # ,
-  # tar_target(sl_lib, c("SL.glm","SL.xgboost", "SL.nnet"))
-  # ,
-  #
-  # tar_target(parms,
-  #            list(trt = a,
-  #                 outcome = y ,
-  #                 baseline = w ,
-  #                 time_vary=tv,
-  #                 outcome_type = "survival",
-  #                 cens = cens,
-  #                 k = 0
-  #                 ,
-  #                 learners_outcome = sl_lib,
-  #                 learners_trt = sl_lib
-  #            ))
-  # ,
-  #
-  # # Run TMLE --------------------------------------------------
-  #
-  # tar_target(tmle_results_d0_d3,
-  #            lapply(paste0("d", 0:3) , function (x) do.call(
-  #              run_lmtp, c(parms, list(data= tmle_df,
-  #                                      shift= eval(as.symbol(x))))
-  #            )))
-  # ,
-  # tar_target(tmle_results_d4_d8,
-  #            lapply(paste0("d", 4:8) , function (x) do.call(
-  #              run_lmtp, c(parms, list(data= tmle_df,
-  #                                      shift= eval(as.symbol(x))))
-  #            )))
-  # ,
-  # tar_target(tmle_results_d9_d12,
-  #            lapply(paste0("d", 9:12) , function (x) do.call(
-  #              run_lmtp, c(parms, list(data= tmle_df,
-  #                                      shift= eval(as.symbol(x))))
-  #            )))
-  # ,
-  #
-  # tar_target(tmle_results_d13_d16,
-  #            lapply(paste0("d", 13:16) , function (x) do.call(
-  #              run_lmtp, c(parms, list(data= tmle_df,
-  #                                      shift= eval(as.symbol(x))))
-  #            )))
-  # ,
-  #
-  # tar_target(tmle_results_list, c(
-  #   tmle_results_d0_d3, tmle_results_d4_d8,
-  #   tmle_results_d9_d12, tmle_results_d13_d16
-  # ))
-  #
-  # ,
-  #
-  #
-  # tar_target(results_df,
-  #            get_contrast(results_list= tmle_results_list ,
-  #                         ref_d= 0, # d0 is the observed you can change into any d#
-  #                         d_max=16,
-  #                         type= "rr"))
+  # Run TMLE --------------------------------------------------
+
+  tar_target(tmle_results,
+             lapply(paste0("d",0:4) ,
+                    function (x) do.call(run_lmtp,
+                              c(params, list(data= tmle_data,
+                                             shift= eval(as.symbol(x))))
+                      )))
+  ,
+
+  tar_target(results_df,
+             get_contrast(results_list= tmle_results ,
+                          ref_d= 1, # d0 is the observed you can change into any d#
+                          d_max=4,
+                          type= "or"))
   # ,
   #
   # tar_target(results_df2,
