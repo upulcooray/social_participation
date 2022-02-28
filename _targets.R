@@ -64,8 +64,8 @@ list(
   tar_target(tab1_data,
              get_tab1_data(descriptive_data),
              format= "rds")
-
   ,
+
   tar_target(table_1,
              create_table1(df = tab1_data,
                            headvar = out,
@@ -81,37 +81,39 @@ list(
   tar_target(tmle_data,
              get_tmle_data(descriptive_data),
              format= "rds")
-  # ,
+  ,
 
 
-  # # Set-up TMLE --------------------------------------------------------------
-  # tar_target(a, c("A0_teeth", "A1_teeth"))
-  # ,
-  # tar_target(y, "Y2_any")
-  # ,
-  # tar_target(w, c("Age", "Sex",
-  #                 "Y0_any_2","Y0_any_3","Y0_any_4","Y0_any_5","Y0_any_6"))
-  # ,
-  # tar_target(tv, list(c("L0_inc",
-  #                       "L0_iadl",
-  #                       "L0_mari"),
-  #                     c("L1_inc",
-  #                       "L1_iadl",
-  #                       'L1_mari')))
-  # ,
-  # tar_target(sl_lib, c("SL.glm", "SL.xgboost"))
-  # ,
-  #
-  # tar_target(params,
-  #            list(trt = a,
-  #                 outcome = y ,
-  #                 baseline = w ,
-  #                 time_vary=tv,
-  #                 outcome_type = "binomial",
-  #                 k=0,
-  #                 learners_outcome = sl_lib,
-  #                 learners_trt = sl_lib
-  #            ))
+  # Set-up TMLE --------------------------------------------------------------
+  tar_target(a, expo)  # time varying exposure (2010 & 2013)
+  ,
+
+  tar_target(y, out)   # Outcome (2016)
+  ,
+  # Time-invariant covariates
+  tar_target(w, colnames(tmle_data %>% select(Age,Sex,contains("Y0"))))
+
+  ,
+  # time-varying covariates
+  tar_target(tv, list(colnames(tmle_data %>% select(contains("L0"))),
+                      colnames(tmle_data %>% select(contains("L1")))))
+  ,
+
+  tar_target(sl_lib, c("SL.glm", "SL.xgboost", "SL.nnet"))
+
+  ,
+
+  tar_target(params,
+             list(trt = a,
+                  outcome = y ,
+                  baseline = w ,
+                  time_vary=tv,
+                  outcome_type = "binomial",
+                  k=0
+                  # ,
+                  # learners_outcome = sl_lib,
+                  # learners_trt = sl_lib
+             ))
   # ,
   #
   # # Define shift functions to shift exposure----------------------------------
