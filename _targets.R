@@ -114,35 +114,35 @@ list(
                   # learners_outcome = sl_lib,
                   # learners_trt = sl_lib
              ))
-  # ,
-  #
-  # # Define shift functions to shift exposure----------------------------------
-  #
-  # tar_target(d1,
-  #            function(data, trt) {
-  #              (data[[trt]]==1)*data[[trt]]+
-  #                (data[[trt]]!=1)* 1})
-  # ,
-  # tar_target(d2,
-  #            function(data, trt) {
-  #              (data[[trt]]==2)*data[[trt]]+
-  #                (data[[trt]]!=2)* 2})
-  # ,
-  # tar_target(d3,
-  #            function(data, trt) {
-  #              (data[[trt]]==3)*data[[trt]]+
-  #                (data[[trt]]!=3)* 3})
-  # ,
-  # tar_target(d4,
-  #            function(data, trt) {
-  #              (data[[trt]]==4)*data[[trt]]+
-  #                (data[[trt]]!=4)* 4})
-  # ,
-  # tar_target(d5,
-  #            function(data, trt) {
-  #              (data[[trt]]- 1 >= 1) * (data[[trt]] -1) +
-  #                (data[[trt]] - 1 < 1) * data[[trt]] })
-  #
+  ,
+
+  # Define shift functions to shift exposure----------------------------------
+
+  tar_target(d1,
+             function(data, trt) {
+               (data[[trt]]==1)*data[[trt]]+
+                 (data[[trt]]!=1)* 1})
+  ,
+  tar_target(d2,
+             function(data, trt) {
+               (data[[trt]]==2)*data[[trt]]+
+                 (data[[trt]]!=2)* 2})
+  ,
+  tar_target(d3,
+             function(data, trt) {
+               (data[[trt]]==3)*data[[trt]]+
+                 (data[[trt]]!=3)* 3})
+  ,
+  tar_target(d4,
+             function(data, trt) {
+               (data[[trt]]==4)*data[[trt]]+
+                 (data[[trt]]!=4)* 4})
+  ,
+  tar_target(d5,
+             function(data, trt) {
+               (data[[trt]]- 1 >= 1) * (data[[trt]] -1) +
+                 (data[[trt]] - 1 < 1) * data[[trt]] })
+
   # ,
   #
   # tar_target(table2,  # a .docx file will be created in the working folder
