@@ -156,17 +156,31 @@ list(
                       )))
   ,
 
+  tar_target(tmle_results_with_SL,
+             lapply(paste0("d",0:4) ,
+                    function (x) do.call(run_lmtp,
+                              c(params, list(data= tmle_data,
+                                             learners_outcome = sl_lib,
+                                             learners_trt = sl_lib,
+                                             shift= eval(as.symbol(x))))
+                      )))
+  ,
+
   tar_target(results_df,
              get_contrast(results_list= tmle_results ,
                           ref_d= 1, # d0 is the observed you can change into any d#
                           d_max=4,
                           type= "or"))
+  ,
+
+  tar_target(results_df_with_SL,
+             get_contrast(results_list= tmle_results_with_SL ,
+                          ref_d= 1, # d0 is the observed you can change into any d#
+                          d_max=4,
+                          type= "or"))
   # ,
-  #
-  # tar_target(results_df2,
-  #            get_contrast(results_list= tmle_results_list ,
-  #                         ref_d= 1, # d0 is the observed you can change into any d#
-  #                         d_max=16,
-  #                         type= "rr"))
+
+
+
 
 )

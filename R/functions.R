@@ -457,8 +457,7 @@ get_contrast<- function(results_list,
   return(results_df %>%
            dplyr::select(Estimand, theta, conf.low,
                          conf.high, p.value, shift, ref) %>%
-           mutate(across(where(is.numeric), ~format(round(.,2),nsmall= 3)))
-
-  )
+           mutate(across(where(is.numeric), ~format(round(.,3),
+                                                    nsmall= 3))))
 
 }
