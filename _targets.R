@@ -37,7 +37,7 @@ d4 <-  function(data, trt) {
 # Set target-specific options such as packages-----------------------------------
 tar_option_set(packages = c("tidyverse", "haven",
                             "Gmisc", "htmlTable",
-                            "flextable",
+                            "flextable", "EValue"
                             "lmtp"))
 
 
@@ -166,16 +166,35 @@ list(
                       )))
   ,
 
-  tar_target(results_df,
+  tar_target(results_d0_glm,
+             get_contrast(results_list= tmle_results ,
+                          ref_d= 0, # d0 is the observed you can change into any d#
+                          d_max=4,
+                          type= "or"))
+  ,
+
+  tar_target(results_d1_glm,
              get_contrast(results_list= tmle_results ,
                           ref_d= 1, # d0 is the observed you can change into any d#
                           d_max=4,
                           type= "or"))
   ,
 
-  tar_target(results_df_with_SL,
+
+
+
+
+
+  tar_target(results_d1_with_SL,
              get_contrast(results_list= tmle_results_with_SL ,
                           ref_d= 1, # d0 is the observed you can change into any d#
+                          d_max=4,
+                          type= "or"))
+  ,
+
+  tar_target(results_d0_with_SL,
+             get_contrast(results_list= tmle_results_with_SL ,
+                          ref_d= 0, # d0 is the observed you can change into any d#
                           d_max=4,
                           type= "or"))
   # ,

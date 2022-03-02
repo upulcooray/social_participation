@@ -33,7 +33,9 @@ get_or_plot <-  function(data, table_text_size= 3, title_test_size= 11,
                                         "]"))
 
 
-  g1 = ggplot2::ggplot(tmp, ggplot2::aes(x = as.numeric(theta), xmin = as.numeric(conf.low), xmax  = as.numeric(conf.high),
+  g1 = ggplot2::ggplot(tmp, ggplot2::aes(x = as.numeric(theta),
+                                         xmin = as.numeric(conf.low),
+                                         xmax  = as.numeric(conf.high),
                                          y = estimand))+
     ggplot2::geom_point(ggplot2::aes(size= size),shape=22, fill="darkblue")+
     ggplot2::geom_errorbarh(height=0.1, size=0.1) +
