@@ -37,7 +37,7 @@ d4 <-  function(data, trt) {
 # Set target-specific options such as packages-----------------------------------
 tar_option_set(packages = c("tidyverse", "haven",
                             "Gmisc", "htmlTable",
-                            "flextable", "EValue"
+                            "flextable", "EValue",
                             "lmtp"))
 
 
@@ -170,14 +170,16 @@ list(
              get_contrast(results_list= tmle_results ,
                           ref_d= 0, # d0 is the observed you can change into any d#
                           d_max=4,
-                          type= "or"))
+                          type= "or") %>% mutate(ref="d0",
+                                                 est= "glm"))
   ,
 
   tar_target(results_d1_glm,
              get_contrast(results_list= tmle_results ,
                           ref_d= 1, # d0 is the observed you can change into any d#
                           d_max=4,
-                          type= "or"))
+                          type= "or")%>% mutate(ref="d1",
+                                                est= "glm"))
   ,
 
 
@@ -189,17 +191,33 @@ list(
              get_contrast(results_list= tmle_results_with_SL ,
                           ref_d= 1, # d0 is the observed you can change into any d#
                           d_max=4,
-                          type= "or"))
+                          type= "or")%>% mutate(ref="d1",
+                                                est= "sl"))
   ,
 
   tar_target(results_d0_with_SL,
              get_contrast(results_list= tmle_results_with_SL ,
                           ref_d= 0, # d0 is the observed you can change into any d#
                           d_max=4,
-                          type= "or"))
-  # ,
+                          type= "or")%>% mutate(ref="d0",
+                                                est= "sl"))
+  ,
 
+  tar_target(results_combined,
+             rbind(results_d0_glm,
+                   results_d1_glm,
+                   results_d0_with_SL,
+                   results_d1_with_SL))
+  ,
 
+  tar_target(table_2,
+             get_table2(results_combined),
+             format= "file")
+  ,
+
+  tar_target(figure_2,
+             get_figure2(results_combined),
+             format = "file")
 
 
 )

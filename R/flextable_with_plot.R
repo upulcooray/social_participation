@@ -4,110 +4,97 @@ library(tidyverse)
 library(flextable)
 
 
-df <- tar_read(results_df)
+df <- tar_read(results_combined)
 
-
-get_results_tables <- function(df,
-                               file_name="tables/table_2",
-                               out_type= "pdf"){
-
-  # function for plot
-  point_range <- function(df){
-
-    ggplot(data = df , aes(x=df$theta,  y=df$Estimand,
-                           xmin = df$conf.low, xmax= df$conf.high))+
-      geom_point(color="blue")+
-      geom_errorbarh(height=0.1, size=0.2) +
-      geom_vline(xintercept = 1, linetype = "longdash",
-                 colour = "grey50",size=.2)+
-      scale_x_continuous(limits=c(0.9, 1.45))+
-      theme_void()+
-      theme(panel.border = element_blank())
-  }
-  # function for E-value
-  evalue <- function(x) {
-
-    e<- evalues.OR(est = x[[1]], lo = x[[2]], hi = x[[3]],rare = T)
-    return(e[[2]])
-  }
-
-  grp <- c(1:nrow(df))
-
-  temp <- data.frame(grp,df) %>% mutate_at(vars(-Estimand),as.numeric)
-
-  # Adding E-value ----
-  df_e <- temp %>% select(grp,theta,conf.low, conf.high) %>% group_by(grp) %>% nest()
-
-  Eval<- df_e %>% mutate(E= map_dbl(data, evalue)) %>% pull(E) %>% round(2)
-
-  # Adding point range ----
-  df_nest <- temp %>% group_by(grp) %>% nest()
-
-  z <- df_nest %>% mutate(plot = map(data, ~point_range(.x)))
-
-  p<- left_join(z %>% ungroup(),temp) %>%
-    select(-data,-grp) %>%
-    mutate(or_ci = glue::glue("{theta} [{conf.low}-{conf.high}]"),
-           `E-value` = Eval) %>%
-    select(Estimand, or_ci, `E-value`, plot)
-
-  # Creating table ----
-
+get_table2 <- function(df, estimator="sl"){
 
   flextable::set_flextable_defaults(
     font.family = "Arial" ,
-    font.size = 10,
-    # table.layout = "autofit",
+    font.size = 11,
+    text.align = "left",
+    table.layout = "autofit",
     line_spacing= 0.9)
 
-
-  tab <- p %>%
-    flextable(cwidth = c(0.5,1.5,0.5,2)) %>%
-    set_header_labels(Estimand = "Contrast", or_ci= "OR [95% CI]", plot=" ") %>%
-    mk_par(
-      j = 4,
-      value = as_paragraph(gg_chunk(value = plot
-                                    , height = 0.2, width = 2
-                                    ))) %>%
-    flextable::align( align = "left", part = "all") %>%
-    flextable::align( j=4, align = "left", part = "all")  %>%
-    border_remove() %>%
-    hline(i=1, j=1:3,part = "header") %>%
-    hline_top(j=1:3,part = "header") %>%
-    hline_bottom(j=1:3)
-
-  if ("pdf" %in% out_type){
-    return(tab)
-  }else{
-    doc <- officer::read_docx()
-    doc <- flextable::body_add_flextable(doc, value = tab)
-    fileout <- tempfile(fileext = "/.docx")
-    fileout <- glue::glue({file_name},".docx") # write in your working directory
-
-    print(doc, target = fileout)
-
+  # function for E-value
+  evalue <- function(theta,lo, high ) {
+    e<- evalues.OR(est = theta, lo = lo, hi = high,rare = T)
+    return(as.numeric(e[[2]])  %>%
+             format(x=round(x = .,2),nsmall=2))
   }
+
+
+  tab<- df %>% dplyr::filter(est== estimator) %>%
+    mutate(Estimand= str_replace(Estimand,"d0", "Observed"),
+           Estimand= str_replace(Estimand,"d1", "Edentate"),
+           Estimand= str_replace(Estimand,"d2", "1-9 teeth"),
+           Estimand= str_replace(Estimand,"d3", "10-19 teeth"),
+           Estimand= str_replace(Estimand,"d4", ">=20 teeth"),
+           Estimand= str_replace_all(Estimand,"_", " ")
+           ) %>%
+    arrange(theta) %>%
+    select(Estimand,theta,conf.low, conf.high) %>%
+    mutate_at(vars(-Estimand),as.numeric) %>%
+    mutate(e= pmap(.l = list(.$theta,.$conf.low,.$conf.high),
+                   ~ evalue(theta = .x,lo = .y, high = ..3))) %>%
+    mutate_if(is.numeric, ~format(round(.,2),nsmall= 2)) %>%
+    mutate(or_ci = glue::glue("{theta} [{conf.low}-{conf.high}]")) %>%
+    mutate(e= as.numeric(e)) %>%
+    select(Contrast= Estimand, `OR [95% CI]`= or_ci, `E-value`= e) %>%
+    flextable::flextable()
+
+  doc <- officer::read_docx()
+  doc <- flextable::body_add_flextable(doc, value = tab)
+  fileout <- "tables/table_2.docx" # write in your working directory
+
+  print(doc, target = fileout)
+
+
+}
+
+get_table2(df)
+
+
+get_figure2 <- function(df){
+
+  df %>% mutate_at(vars(-c(Estimand,ref,est)),as.numeric) %>%
+    mutate(Estimand= str_replace(Estimand,"d0", "Observed"),
+           Estimand= str_replace(Estimand,"d1", "Edentate"),
+           Estimand= str_replace(Estimand,"d2", "1-9 teeth"),
+           Estimand= str_replace(Estimand,"d3", "10-19 teeth"),
+           Estimand= str_replace(Estimand,"d4", ">=20 teeth"),
+           Estimand= str_replace_all(Estimand,"_", " ")
+    ) %>%
+    arrange(desc(theta)) %>%
+    mutate(est= factor(est, levels = c("glm","sl"),
+                       labels = c("Without SuperLearner",
+                                  "With SuperLearner"
+                       ))) %>%
+    mutate(y= factor(Estimand),
+           y= fct_reorder(y,desc(theta))) %>%
+
+    group_by(y,theta) %>%
+    ggplot(aes(x=theta, y=y, color=est,xmin=conf.low,xmax= conf.high))+
+    scale_color_manual(aesthetics = "color",values = c("grey70", "black"),
+                       name="Estimator: ")+
+    geom_errorbar(position=ggstance::position_dodgev(height=0.5),
+                  size=0.5,
+                  width = 0.2)+
+    geom_point(position=ggstance::position_dodgev(height=0.5))+
+    geom_segment(aes(x = 1 ,y=0,xend = 1, yend = 8.3),
+                 color="grey60", linetype="dashed")+
+    xlab("Odds Ratio (error bars indicate 95% confidence intervals)")+
+    theme_classic()+
+    theme(legend.position= c(0.4,0.99),
+          panel.grid.major.y = element_line(color="grey95"),
+          legend.direction = "horizontal",
+          legend.background = element_blank(),
+          axis.title.y = element_blank())
+
+    ggsave("figures/figure_2.pdf",device = "pdf",width = 8, height = 9,dpi = 900)
+
 
 }
 
 
+get_figure2(df)
 
-
-point_range(temp)
-
-get_results_tables(df, out_type = "word")
-
-# p %>%
-#   flextable(col_keys = c("Contrast", "OR [95% CI]", "E-value", " "),
-#             cwidth = c(1,1.75,1,2)) %>%
-#   merge_at(j = 4,
-#            i = c(1:4)) %>%
-#   border_remove() %>%
-#   hline(i=1, j=1:3,part = "header") %>%
-#   hline_top(j=1:3,part = "header") %>%
-#   hline_bottom(j=1:3) %>%
-#   compose(
-#     j = 4,
-#     value = as_paragraph(as_image(src="test.png",width = 2, height = 2.2, unit = "in")), part="body"
-#   )
-#
