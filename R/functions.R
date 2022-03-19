@@ -59,16 +59,58 @@ get_descriptive_data <- function(data){
   base_vars <- df %>% dplyr::select(Age,Sex,dplyr::contains("0_")) %>% colnames()
   L1_vars <- df %>% dplyr::select(dplyr::contains("1_")) %>% colnames()
 
- df <- df %>%
-   dplyr::mutate_at(dplyr::vars(dplyr::all_of(c(L1_vars,"Y2"))),
-                    ~ dplyr::if_else(c1==0 & is.na(.),-99,.)) %>%
-   dplyr::mutate(Y2= dplyr::if_else(c2==0 ,-88,Y2)) %>%
+ df2 <- df %>%
+   dplyr::mutate_at(dplyr::vars(dplyr::all_of(L1_vars)),
+                    ~ dplyr::if_else(c1==0 & !is.na(.),-99,.)) %>%
+   # dplyr::mutate(Y2= dplyr::if_else(c1==0 | c2==0 ,-88,Y2)) %>%
     dplyr::select(c(base_vars,"c1","C1",L1_vars,"C2","c2","Y2"))
+
+ df2
 
 
 }
 
-# Labelling data
+
+get_mice_data <- function(df, mice_cars, imp_only_vars, ...){
+
+  # get predictor matrix----
+
+  allVars <- names(df)
+
+  ## names of variables with missingness
+  missVars <- names(df)[colSums(is.na(df)) > 0]
+
+  ## mice predictorMatrix
+  predictorMatrix <- matrix(0, ncol = length(allVars), nrow = length(allVars))
+  rownames(predictorMatrix) <- allVars
+  colnames(predictorMatrix) <- allVars
+
+  imputerMatrix <- predictorMatrix
+  imputerMatrix[,mice_cars] <- 1
+
+  imputedMatrix <- predictorMatrix
+  imputedMatrix[,unique(c(mice_cars,imp_only_vars))] <- 1
+
+  ## Keep correct imputer-imputed pairs only
+  predictorMatrix <- imputerMatrix * imputedMatrix
+  ## Diagonals must be zeros (a variable cannot impute itself)
+  diag(predictorMatrix) <- 0
+
+  set.seed(19851111)
+
+  m <- mice::mice(data = df,
+                  predictorMatrix = predictorMatrix,
+                  ...)
+
+  imp_df <- mice::complete(m,"long")
+
+  return(imp_df)
+
+
+}
+
+
+# Labelling data ----
 get_labelled_data <- function(df){
 
   num_vars <- df %>% na.omit() %>%
@@ -150,6 +192,7 @@ get_labelled_data <- function(df){
 }
 
 # use descriptive_data for analysis of missing, create flow of participants
+# plot missingness ----
 plot_missing <- function(df, by_var= "Y2", x_lab= "Categories of outcome variable"){
   base_vars <- df %>% dplyr::select(Age,Sex,dplyr::contains("0_")) %>% colnames()
   L1_vars <- df %>% dplyr::select(dplyr::contains("1_")) %>% colnames()
@@ -209,7 +252,7 @@ plot_missing <- function(df, by_var= "Y2", x_lab= "Categories of outcome variabl
 
 }
 
-# flow of participants
+# flow of participants  ----
 flow_chart <- function(df,expo,out,base_cov,l1_cov){
 
   df_nomis_expo <- df %>% filter_at(vars(expo),~!is.na(.))
@@ -227,7 +270,7 @@ flow_chart <- function(df,expo,out,base_cov,l1_cov){
 
   missing_out <- n_baseline- nrow(df_nomis_out_expo)- missing_expo
 
-  # Number of people with missing baseline cavariates
+  # Number of people with missing baseline covariates
   missing_base_cov<- n_nomis_out_expo - nrow(df_nomis_base)
 
   # Number of people with missing follow-up covariates
@@ -276,7 +319,7 @@ flow_chart <- function(df,expo,out,base_cov,l1_cov){
   library(Gmisc, htmlTable,quietly = T)
 
   baseline <- Gmisc::boxGrob(glue::glue("Eligible baseline participants",
-                                        "n = {txtInt(n_baseline)}",
+                                        "n = {txtInt(x=n_baseline)}",
                                         .sep = "\n"),
                              y=0.8, x = 0.5)
 
@@ -338,37 +381,171 @@ flow_chart <- function(df,expo,out,base_cov,l1_cov){
 
 }
 
-# Use analytic data for table 1
-get_tab1_data <- function(df){
+# flow of participants (imp data) ----
+flow_chart_imp <- function(df,expo,out,base_cov,l1_cov){
+
+  # Number of eligible participants
+  n_baseline <- nrow(df)
+
+  n_2013 <-  df %>% filter(c1==1) %>% nrow()
+
+  n_2016 <-  df %>% filter(c1==1 & c2==1) %>% nrow()
+
+
+  # censoring ---------
+
+  n_died_13 <- df %>% dplyr::filter(C1==5) %>% nrow()
+
+  n_ineligible_13 <- df %>% dplyr::filter(C1==3|C1==4) %>% nrow()
+
+  n_lost_13 <- df %>% dplyr::filter(C1==6) %>% nrow()
+
+  n_c1 <- n_died_13+n_ineligible_13+ n_lost_13
+
+  # Check
+  # n_died_13+ n_ineligible_13+ n_lost_13+ n_2013==c1_censored
+
+  n_died_16 <- df %>% dplyr::filter(c1==1 & C2==5) %>% nrow()
+
+  n_ineligible_16 <- df %>% dplyr::filter(c1==1 & (C2==3|C2==4)) %>% nrow()
+
+  n_lost_16 <- df %>% dplyr::filter(c1==1 & C2==6) %>% nrow()
+
+  n_c2 <-  n_died_16+n_ineligible_16+ n_lost_16
+  # Check
+  # n_died_16+ n_ineligible_16+ n_lost_16==c2_censored
+
+
+  # Creating the flow chart ---------
+  library(Gmisc, htmlTable,quietly = T)
+
+  baseline <- Gmisc::boxGrob(glue::glue("Eligible baseline participants",
+                                        "n = {txtInt(x=n_baseline)}",
+                                        .sep = "\n"),
+                             y=0.9, x = 0.5)
+
+  followup13 <- Gmisc::boxGrob(glue::glue("Number of participants at 2013 follow-up",
+                                          "n = {txtInt(n_2013)}",
+                                          .sep = "\n"),
+                               y=0.5,x = 0.5)
+
+  followup16 <- Gmisc::boxGrob(glue::glue("Number of participants at 2016",
+                                          "n = {txtInt(n_2016)}",
+                                          .sep = "\n"),
+                               y=0.1,x = 0.5)
+
+  cens1 <- Gmisc::boxGrob(glue::glue("Censored between baseline and 2013\n(n= {txtInt(n_c1)})",
+                                     "- {txtInt(n_died_13)} died",
+                                     "- {txtInt(n_ineligible_13)} became functionally dependent",
+                                     "- {txtInt(n_lost_13)} were lost to folow-up",
+                                     .sep = "\n"),
+                          just = "left",
+                          y = 0.7,x = 0.22)
+
+  cens2 <- Gmisc::boxGrob(glue::glue("Censored between 2013 and 2016\n(n= {txtInt(n_c2)})",
+                                     "- {txtInt(n_died_16)} died",
+                                     "- {txtInt(n_ineligible_16)} became functionally dependent",
+                                     "- {txtInt(n_lost_16)} were lost to folow-up",
+                                     .sep = "\n"),
+                          just = "left",
+                          y = 0.3,x = 0.23)
+
+
+  grDevices::svg(filename = "figures/flowchart_imp.svg",width = 10,height = 12)
+
+  grid::grid.newpage()
+
+  print(baseline)
+  print(cens1)
+  print(followup13)
+  print(cens2)
+  print(followup16)
+
+  dev.off()
+
+}
+
+
+# Use analytic data for table 1 ----
+get_tab1_data <- function(df, imp=T){
+
+  if(imp){
+
+  analytic_data <- df %>%
+    dplyr::mutate_all(~dplyr::if_else(.==-99 | .==-88 ,NA_real_,.)) %>%
+    get_labelled_data()
+
+  }else{
 
   analytic_data <- df %>%
     stats::na.omit() %>%
     dplyr::mutate_all(~dplyr::if_else(.==-99 | .==-88 ,NA_real_,.)) %>%
     get_labelled_data()
 
+  }
+
   return(analytic_data)
 
 }
 
+# supplementary table 1 -----
+get_dropout_comparison <- function(df, rowvars){
 
-get_tmle_data <- function(df){
+  dat <- df %>%
+
+    mutate(Follow_up = case_when(C1==1 & C2== 1 ~ "Remained",
+                                 C1==5 | (c1==1 & C2==5) ~ "Died",
+                                 (C1==3|C1==4)| (c1==1 & (C2==3|C2==4)) ~ "Became ineligible",
+                                 C1==6 | (c1==1 & C2==6) ~ "Lost to follow-up")
+           %>% as_factor() %>%  fct_relevel("Remained",
+                                            "Became ineligible",
+                                            "Died",
+                                            "Lost to follow-up"
+           ))
+
+  upulR::create_table1(df = dat,
+                       headvar = "Follow_up",
+                       rowvars = rowvars,
+                       file_name = "tables/supplementary_table1",
+                       header = "Follow-up Status")
+}
+
+
+get_tmle_data <- function(df,imp=T){
+
+  if (imp){
+
+  for_tmle <- df %>%
+    dplyr::mutate_at(vars(-c(.imp,.id)),
+                     ~dplyr::if_else(.==-99 | .==-88 ,NA_real_,.)) %>%
+    dplyr::mutate(Y2= dplyr::if_else(c1==0 | c2==0 ,NA_real_,Y2))
+
+  }else{
 
   for_tmle <- df %>%
     stats::na.omit() %>%
     dplyr::mutate_all(~dplyr::if_else(.==-99 | .==-88 ,NA_real_,.))
 
+  }
+
+
   make_dums <- for_tmle %>% na.omit() %>%
     dplyr::select_if(function(x)
       length(unique(x))< 7 & length(unique(x))>2) %>%
-    select(-contains("teeth")) %>%
+    select(-contains(c("teeth",".imp"))) %>%
     colnames()
 
-  for_tmle %>%
+  tmle_df <- for_tmle %>%
   fastDummies::dummy_cols(all_of(make_dums),
                           remove_first_dummy = T,
                           ignore_na = T,remove_selected_columns = T ) %>%
     mutate_all(as.numeric)
+
+
+  tmle_df
 }
+
+
 
 
 # library(tidyverse)
@@ -456,11 +633,37 @@ get_contrast<- function(results_list,
 
   return(results_df %>%
            dplyr::select(Estimand, theta, conf.low,
-                         conf.high, p.value, shift, ref) %>%
-           mutate(across(where(is.numeric), ~format(round(.,2),
-                                                    nsmall= 2))))
+                         conf.high,std.error, p.value, shift, ref)
+         )
 
 }
+
+
+# get pooled estimates ----
+get_pooled_estimates <- function(df,mi=5){
+
+  df %>%
+    group_by(est,ref,Estimand,.groups = 'keep') %>%
+    dplyr::mutate(variance= std.error^2)%>%
+    dplyr::summarise(theta.combined = mean(theta),
+                     p.combined = median(p.value) ,
+                     Vw = sum(variance)/mi, # Within imputation variance
+                     Vb = sum((theta - mean(theta))^2/(mi-1)), # Between imputation variance
+                     Vt = Vw + Vb + Vb/mi, # Total variance
+                     SE.combined = sqrt(Vt),
+                     vm = (mi-1)*(1 + (Vw/((1+1/mi)*Vb)))^2, #df correction
+                     conf.low = theta.combined - qt(0.975, vm)*SE.combined,
+                     conf.high = theta.combined + qt(0.975, vm)*SE.combined) %>%
+    ungroup() %>%
+    dplyr::select(Estimand, theta= theta.combined,conf.low,
+                  conf.high, p.value= p.combined, est, ref)
+
+
+
+}
+
+
+
 
 
 # Get table 2 (Point estimates, CIs, Evalues for with SL estimator )
@@ -483,7 +686,7 @@ get_table2 <- function(df, estimator="sl"){
   }
 
 
-  tab<- df %>% dplyr::filter(est== estimator) %>%
+  tab<- df %>% dplyr::filter(est==estimator) %>%
     mutate(Estimand= str_replace(Estimand,"d0", "Observed"),
            Estimand= str_replace(Estimand,"d1", "Edentate"),
            Estimand= str_replace(Estimand,"d2", "1-9 teeth"),
@@ -492,19 +695,21 @@ get_table2 <- function(df, estimator="sl"){
            Estimand= str_replace_all(Estimand,"_", " ")
     ) %>%
     arrange(theta) %>%
-    select(Estimand,theta,conf.low, conf.high) %>%
+    select(Estimand,theta,conf.low, conf.high, p.value) %>%
     mutate_at(vars(-Estimand),as.numeric) %>%
     mutate(e= pmap(.l = list(.$theta,.$conf.low,.$conf.high),
                    ~ evalue(theta = .x,lo = .y, high = ..3))) %>%
-    mutate_if(is.numeric, ~format(round(.,2),nsmall= 2)) %>%
+    mutate_at(vars(theta,conf.low, conf.high), ~format(round(.,2),nsmall= 2)) %>%
+    mutate(p.value= format(round(p.value,3),nsmall= 3)) %>%
     mutate(or_ci = glue::glue("{theta} [{conf.low}-{conf.high}]")) %>%
     mutate(e= as.numeric(e)) %>%
-    select(Contrast= Estimand, `OR [95% CI]`= or_ci, `E-value`= e) %>%
+    select(Contrast= Estimand, `OR [95% CI]`= or_ci, `P value`=p.value,
+           `E-value`= e) %>%
     flextable::flextable()
 
   doc <- officer::read_docx()
   doc <- flextable::body_add_flextable(doc, value = tab)
-  fileout <- "tables/table_2.docx" # write in your working directory
+  fileout <- "tables/table_2_imp.docx" # write in your working directory
 
   print(doc, target = fileout)
 
@@ -550,7 +755,7 @@ get_figure2 <- function(df){
           legend.background = element_blank(),
           axis.title.y = element_blank())
 
-  ggsave("figures/figure_2.pdf",device = "pdf",width = 8, height = 9,dpi = 900)
+  ggsave("figures/figure_2_imp.pdf",device = "pdf",width = 8, height = 9,dpi = 900)
 
 
 }
