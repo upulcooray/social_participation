@@ -1,9 +1,4 @@
 
-# data<- readRDS(file="data/selected")
-# source("code/helper_functions.R")
-# library(haven)
-# library(tidyverse)
-
 get_descriptive_data <- function(data){
 
  # iadl2 <- names(data %>% dplyr::select(dplyr::starts_with("iadl2")))
@@ -605,6 +600,23 @@ run_lmtp <- function(data,
 }
 
 
+run_lmtp_imp_data <- function(data, m, d, params){
+
+  data %>%
+    filter(.imp== m) %>%
+
+  purrr::lift(run_lmtp)(data=.,params, shift= eval(as.symbol(d)))
+
+
+}
+
+
+
+
+
+
+
+
 # ---------------------------Function to get contrasts-------------------------
 
 get_contrast<- function(results_list,
@@ -640,35 +652,94 @@ get_contrast<- function(results_list,
 
 
 # get pooled estimates ----
-get_pooled_estimates <- function(df,mi=5){
+# pool_estimates <- function(df,mi=5){
+#
+#   df %>%
+#     group_by(Estimand,.groups = 'keep') %>%
+#     dplyr::mutate(variance= std.error^2,
+#                   p.z = qnorm(p.value)) %>%
+#     dplyr::summarise(theta.combined = mean(theta),
+#                      p.z.mean= mean(p.z),
+#                      p.den= sqrt(1 + var(p.z)),
+#                      p.combined= pnorm( p.z.mean / p.den),
+#                      Vw = sum(variance)/mi, # Within imputation variance
+#                      Vb = sum((theta - mean(theta))^2/(mi-1)), # Between imputation variance
+#                      Vt = Vw + Vb + Vb/mi, # Total variance
+#                      SE.combined = sqrt(Vt),
+#                      vm = (mi-1)*(1 + (Vw/((1+1/mi)*Vb)))^2, #df correction
+#                      conf.low = theta.combined - qt(0.975, vm)*SE.combined,
+#                      conf.high = theta.combined + qt(0.975, vm)*SE.combined) %>%
+#     dplyr::select(Estimand, theta= theta.combined,conf.low,
+#                   conf.high, p.value= p.combined) %>%
+#     ungroup()
+# }
+
+pool_estimates <- function(df,mi=5){
+
+  # from https://rdrr.io/cran/mice/src/R/barnard.rubin.R
+  barnard.rubin <- function(m, b, t, dfcom = Inf) {
+    lambda <- (1 + 1 / m) * b / t
+    lambda[lambda < 1e-04] <- 1e-04
+    dfold <- (m - 1) / lambda^2
+    dfobs <- (dfcom + 1) / (dfcom + 3) * dfcom * (1 - lambda)
+    ifelse(is.infinite(dfcom), dfold, dfold * dfobs / (dfold + dfobs))
+  }
 
   df %>%
-    group_by(est,ref,Estimand,.groups = 'keep') %>%
-    dplyr::mutate(variance= std.error^2)%>%
-    dplyr::summarise(theta.combined = mean(theta),
-                     p.combined = median(p.value) ,
-                     Vw = sum(variance)/mi, # Within imputation variance
-                     Vb = sum((theta - mean(theta))^2/(mi-1)), # Between imputation variance
-                     Vt = Vw + Vb + Vb/mi, # Total variance
-                     SE.combined = sqrt(Vt),
-                     vm = (mi-1)*(1 + (Vw/((1+1/mi)*Vb)))^2, #df correction
-                     conf.low = theta.combined - qt(0.975, vm)*SE.combined,
-                     conf.high = theta.combined + qt(0.975, vm)*SE.combined) %>%
-    ungroup() %>%
-    dplyr::select(Estimand, theta= theta.combined,conf.low,
-                  conf.high, p.value= p.combined, est, ref)
+    group_by(contrast,.groups = 'keep') %>%
+    dplyr::mutate(variance= std.error^2,
+                  p.z = qnorm(p.value)) %>%
+    dplyr::summarise(
+      p.z.mean= mean(p.z),
+      p.den= sqrt(1 + var(p.z)),
+      p.combined= pnorm( p.z.mean / p.den),
+      qbar = mean(theta),
+      ubar = mean(variance), # Within imputation variance
+      b = var(theta), # Between imputation variance
+      t = ubar + (1 + 1 / mi) * b, # Total variance
+      SE.combined = sqrt(t),
+      df = barnard.rubin(mi, b, t), #df correction
+      conf.low = qbar - qt(0.975, df)*SE.combined,
+      conf.high = qbar + qt(0.975, df)*SE.combined) %>%
+    dplyr::select(contrast, theta= qbar,conf.low,
+                  conf.high, p.value= p.combined) %>%
+    ungroup()
+}
 
 
+# contrast and pool ----
+get_pooled_results <- function(...,
+                               est,
+                               ref_d = 0,
+                               d_max = 4,
+                               type= "or"){
 
+  lists <- list(...)
+
+  m<- length(lists)
+
+
+  col_names <- paste0("m",c(1:m))
+
+  names(lists) <- col_names
+
+  a<- as_tibble(lists)
+
+  b<- apply(a,2,FUN = get_contrast,
+            ref_d = ref_d,
+            d_max = d_max,
+            type=type)
+
+  r<- map_dfr(b, bind_rows)
+
+  pool_estimates(r,mi=m) %>%
+    mutate(ref= paste0("d",ref_d),
+           est= est)
 }
 
 
 
-
-
-# Get table 2 (Point estimates, CIs, Evalues for with SL estimator )
-
-
+# Get table 2 (Point estimates, CIs, Evalues for with SL estimator )----
 get_table2 <- function(df, estimator="sl"){
 
   flextable::set_flextable_defaults(
@@ -678,7 +749,7 @@ get_table2 <- function(df, estimator="sl"){
     table.layout = "autofit",
     line_spacing= 0.9)
 
-  # function for E-value
+  # function for E-value----
   evalue <- function(theta,lo, high ) {
     e<- evalues.OR(est = theta, lo = lo, hi = high,rare = T)
     return(as.numeric(e[[2]])  %>%
@@ -694,7 +765,7 @@ get_table2 <- function(df, estimator="sl"){
            Estimand= str_replace(Estimand,"d4", ">=20 teeth"),
            Estimand= str_replace_all(Estimand,"_", " ")
     ) %>%
-    arrange(theta) %>%
+    arrange(ref, theta) %>%
     select(Estimand,theta,conf.low, conf.high, p.value) %>%
     mutate_at(vars(-Estimand),as.numeric) %>%
     mutate(e= pmap(.l = list(.$theta,.$conf.low,.$conf.high),
@@ -709,15 +780,14 @@ get_table2 <- function(df, estimator="sl"){
 
   doc <- officer::read_docx()
   doc <- flextable::body_add_flextable(doc, value = tab)
-  fileout <- "tables/table_2_imp.docx" # write in your working directory
+  fileout <- "tables/table_2_i.docx" # write in your working directory
 
   print(doc, target = fileout)
-
 
 }
 
 
-# Get figure 2 (Compare estimates of with_SL and without SL estimations)
+# Get figure 2 (Compare estimates of with_SL and without SL estimations)----
 
 get_figure2 <- function(df){
 
@@ -736,22 +806,27 @@ get_figure2 <- function(df){
                        ))) %>%
     mutate(y= factor(Estimand),
            y= fct_reorder(y,desc(theta))) %>%
-
+    mutate(ref= factor(ref,levels = c("d1","d0"),
+                       labels = c("(a) Reference= TMLE estimate when the exposure shifted to be edentate",
+                                  "(b) Reference= TMLE estimate related to observed level of exposure"))) %>%
     group_by(y,theta) %>%
     ggplot(aes(x=theta, y=y, color=est,xmin=conf.low,xmax= conf.high))+
     scale_color_manual(aesthetics = "color",values = c("grey70", "black"),
-                       name="Estimator: ")+
+                       name=NULL)+
     geom_errorbar(position=ggstance::position_dodgev(height=0.5),
                   size=0.5,
                   width = 0.2)+
+    facet_wrap(~ref,scales = "free_y",nrow = 2)+
     geom_point(position=ggstance::position_dodgev(height=0.5))+
-    geom_segment(aes(x = 1 ,y=0,xend = 1, yend = 8.3),
+    geom_segment(aes(x = 1 ,y=0,xend = 1, yend = 4.3),
                  color="grey60", linetype="dashed")+
     xlab("Odds Ratio (error bars indicate 95% confidence intervals)")+
     theme_classic()+
-    theme(legend.position= c(0.4,0.99),
+    theme(legend.position= "bottom",
           panel.grid.major.y = element_line(color="grey95"),
           legend.direction = "horizontal",
+          # strip.text.x = element_blank(),
+          strip.background = element_blank(),
           legend.background = element_blank(),
           axis.title.y = element_blank())
 
@@ -761,90 +836,116 @@ get_figure2 <- function(df){
 }
 
 
+imp_filter <- function(data, m){
+
+  data %>%
+    dplyr::filter(.imp==m)
+
+}
+
+
+# rounding ----
+round_uc <- function(data){
+
+  data %>%
+    mutate_at(vars(theta,conf.low, conf.high), ~format(round(.,2),nsmall= 2)) %>%
+    mutate(`P value`= format(round(p.value,3),nsmall= 3),
+           est_ci = glue::glue("{theta} [{conf.low}-{conf.high}]")) %>%
+
+    dplyr::select(contrast,
+                  `OR [95% CI]`= est_ci,
+                  `P value`)
+}
 
 
 
 
 # Get tmle results table -----
-get_results_tables <- function(df,
-                               file_name="tables/table_2",
-                               out_type= "pdf"){
+# get_results_tables <- function(df,
+#                                file_name="tables/table_2",
+#                                out_type= "pdf"){
+#
+#   # function for plot
+#   point_range <- function(df){
+#
+#     ggplot(data = df , aes(x=df$theta,  y=df$Estimand,
+#                            xmin = df$conf.low, xmax= df$conf.high))+
+#       geom_point(color="blue")+
+#       geom_errorbarh(height=0.1, size=0.2) +
+#       geom_vline(xintercept = 1, linetype = "longdash",
+#                  colour = "grey50",size=.2)+
+#       scale_x_continuous(limits=c(0.9, 1.45))+
+#       theme_void()+
+#       theme(panel.border = element_blank())
+#   }
+#   # function for E-value
+#   evalue <- function(x) {
+#
+#     e<- evalues.OR(est = x[[1]], lo = x[[2]], hi = x[[3]],rare = T)
+#     return(e[[2]])
+#   }
+#
+#   grp <- c(1:nrow(df))
+#
+#   temp <- data.frame(grp,df) %>% mutate_at(vars(-Estimand,ref,est),as.numeric)
+#
+#   # Adding E-value ----
+#   df_e <- temp %>% select(grp,theta,conf.low, conf.high) %>% group_by(grp) %>% nest()
+#
+#   Eval<- df_e %>% mutate(E= map_dbl(data, evalue)) %>% pull(E) %>% round(2)
+#
+#   # Adding point range ----
+#   df_nest <- temp %>% group_by(grp) %>% nest()
+#
+#   z <- df_nest %>% mutate(plot = map(data, ~point_range(.x)))
+#
+#   p<- left_join(z %>% ungroup(),temp) %>%
+#     select(-data,-grp) %>%
+#     mutate(or_ci = glue::glue("{theta} [{conf.low}-{conf.high}]"),
+#            `E-value` = Eval) %>%
+#     select(Estimand, or_ci, `E-value`, plot)
+#
+#   # Creating table ----
+#
+#
+#   flextable::set_flextable_defaults(
+#     font.family = "Arial" ,
+#     font.size = 10,
+#     # table.layout = "autofit",
+#     line_spacing= 0.9)
+#
+#
+#   tab <- p %>%
+#     flextable(cwidth = c(0.5,1.5,0.5,2)) %>%
+#     set_header_labels(Estimand = "Contrast", or_ci= "OR [95% CI]", plot=" ") %>%
+#     mk_par(
+#       j = 4,
+#       value = as_paragraph(gg_chunk(value = plot
+#                                     , height = 0.2, width = 2
+#       ))) %>%
+#     flextable::align( align = "left", part = "all") %>%
+#     flextable::align( j=4, align = "left", part = "all")  %>%
+#     border_remove() %>%
+#     hline(i=1, j=1:3,part = "header") %>%
+#     hline_top(j=1:3,part = "header") %>%
+#     hline_bottom(j=1:3)
+#
+#   if ("pdf" %in% out_type){
+#     return(tab)
+#   }else{
+#     doc <- officer::read_docx()
+#     doc <- flextable::body_add_flextable(doc, value = tab)
+#     fileout <- tempfile(fileext = "/.docx")
+#     fileout <- glue::glue({file_name},".docx") # write in your working directory
+#
+#     print(doc, target = fileout)
+#
+#   }
+#
+# }
 
-  # function for plot
-  point_range <- function(df){
-
-    ggplot(data = df , aes(x=df$theta,  y=df$Estimand,
-                           xmin = df$conf.low, xmax= df$conf.high))+
-      geom_point(color="blue")+
-      geom_errorbarh(height=0.1, size=0.2) +
-      geom_vline(xintercept = 1, linetype = "longdash",
-                 colour = "grey50",size=.2)+
-      scale_x_continuous(limits=c(0.9, 1.45))+
-      theme_void()+
-      theme(panel.border = element_blank())
-  }
-  # function for E-value
-  evalue <- function(x) {
-
-    e<- evalues.OR(est = x[[1]], lo = x[[2]], hi = x[[3]],rare = T)
-    return(e[[2]])
-  }
-
-  grp <- c(1:nrow(df))
-
-  temp <- data.frame(grp,df) %>% mutate_at(vars(-Estimand,ref,est),as.numeric)
-
-  # Adding E-value ----
-  df_e <- temp %>% select(grp,theta,conf.low, conf.high) %>% group_by(grp) %>% nest()
-
-  Eval<- df_e %>% mutate(E= map_dbl(data, evalue)) %>% pull(E) %>% round(2)
-
-  # Adding point range ----
-  df_nest <- temp %>% group_by(grp) %>% nest()
-
-  z <- df_nest %>% mutate(plot = map(data, ~point_range(.x)))
-
-  p<- left_join(z %>% ungroup(),temp) %>%
-    select(-data,-grp) %>%
-    mutate(or_ci = glue::glue("{theta} [{conf.low}-{conf.high}]"),
-           `E-value` = Eval) %>%
-    select(Estimand, or_ci, `E-value`, plot)
-
-  # Creating table ----
 
 
-  flextable::set_flextable_defaults(
-    font.family = "Arial" ,
-    font.size = 10,
-    # table.layout = "autofit",
-    line_spacing= 0.9)
 
 
-  tab <- p %>%
-    flextable(cwidth = c(0.5,1.5,0.5,2)) %>%
-    set_header_labels(Estimand = "Contrast", or_ci= "OR [95% CI]", plot=" ") %>%
-    mk_par(
-      j = 4,
-      value = as_paragraph(gg_chunk(value = plot
-                                    , height = 0.2, width = 2
-      ))) %>%
-    flextable::align( align = "left", part = "all") %>%
-    flextable::align( j=4, align = "left", part = "all")  %>%
-    border_remove() %>%
-    hline(i=1, j=1:3,part = "header") %>%
-    hline_top(j=1:3,part = "header") %>%
-    hline_bottom(j=1:3)
 
-  if ("pdf" %in% out_type){
-    return(tab)
-  }else{
-    doc <- officer::read_docx()
-    doc <- flextable::body_add_flextable(doc, value = tab)
-    fileout <- tempfile(fileext = "/.docx")
-    fileout <- glue::glue({file_name},".docx") # write in your working directory
-
-    print(doc, target = fileout)
-
-  }
-
-}
