@@ -104,6 +104,16 @@ get_mice_data <- function(df, mice_cars, imp_only_vars, ...){
 
 }
 
+is_binary <- function(x) {
+  x0 <- na.omit(x) %>% as.character()
+  length(unique(x0)) %in% 1:2 & all(x%in% 0:2)
+}
+
+is_cat <- function(x) {
+  x0 <- na.omit(x)
+  (length(unique(x0)) > 2 & length(unique(x0)) < 7)
+}
+
 
 # Labelling data ----
 get_labelled_data <- function(df){
@@ -159,7 +169,7 @@ get_labelled_data <- function(df){
 
   tab_data <- df %>%
 
-    dplyr::mutate_at(dplyr::vars(-dplyr::any_of(num_vars)), as.factor) %>%
+    dplyr::mutate(across(where(is_cat), factor)) %>%
     dplyr::mutate(A0_teeth= forcats::fct_recode(A0_teeth, !!!levels$teeth)%>%
                     forcats::fct_relevel(">= 20 teeth","10-19 teeth","1-9 teeth","Edentate"),
                   A1_teeth= forcats::fct_recode(A1_teeth, !!!levels$teeth),
@@ -377,7 +387,9 @@ flow_chart <- function(df,expo,out,base_cov,l1_cov){
 }
 
 # flow of participants (imp data) ----
-flow_chart_imp <- function(df,expo,out,base_cov,l1_cov){
+flow_chart <- function(df){
+
+
 
   # Number of eligible participants
   n_baseline <- nrow(df)

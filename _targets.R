@@ -1,4 +1,5 @@
 library(targets)
+library(tarchetypes)
 library(tidyverse)
 library(upulR) # personal R package for creating Table-1
 
@@ -8,7 +9,7 @@ library(future.callr)
 
 
 # Define custom functions and other global objects -----------------------------
-source("R/functions.R")
+source("R/functions_v2.R")
 source("R/helper_functions.R")
 
 
@@ -21,11 +22,10 @@ out <- "Y2"
 
 d0 <-  NULL
 
-d1 <-  function(data, trt) {  # if more than 20 teeth people become 10-19
+d1 <-  function(data, trt) {  # what if edentulous were 1-9
 
   out <- list()
-  a= data[["A0_teeth"]]
-
+  a= data[[trt]]
   for (i in 1:length(a)) {
     if (as.character(a[i]) %in% c('1','2','3')) {
       out[[i]] <- as.character(a[i])
@@ -37,19 +37,32 @@ d1 <-  function(data, trt) {  # if more than 20 teeth people become 10-19
 }
 
 
-d2 <-  function(data, trt) {  # if more than 20 & 10-19 people become 1-9
+d1.2 <-  function(data, trt) {  # what if edentulous were 1-9 & 1-9 were 10-19
+
+  out <- list()
+  a= data[[trt]]
+  for (i in 1:length(a)) {
+    if (as.character(a[i]) %in% c('1','2')) {
+      out[[i]] <- as.character(a[i])
+    } else {
+      out[[i]] <- as.numeric(as.character(a[i])) - 1
+    }
+  }
+  factor(unlist(out),levels = c(1:4),  ordered = TRUE)
+}
+
+
+d2 <-  function(data, trt) {  # what if edentulous were 1-9 & 1-9 were 10-19 & 10-19 were >20
 
   out <- list()
   a= data[[trt]]
 
   for (i in 1:length(a)) {
-    if (as.character(a[i]) %in% c('1','2')) {
+    if (as.character(a[i]) %in% c('1')) {
       out[[i]] <- as.character(a[i])
 
-    # }else if (as.character(a[i]=="3")){
-    #   as.numeric(as.character(a[i])) - 1
     } else {
-      out[[i]] <-  2
+      out[[i]] <- as.numeric(as.character(a[i])) - 1
     }
   }
   factor(unlist(out), levels = c(1:4), ordered = TRUE)
@@ -57,7 +70,7 @@ d2 <-  function(data, trt) {  # if more than 20 & 10-19 people become 1-9
   }
 
 
-d3 <-  function(data, trt) {  # all edentulous counterfactual scenario
+d3 <-  function(data, trt) {  # What if all were >20
 
   out <- list()
   a= data[[trt]]
@@ -76,6 +89,64 @@ d3 <-  function(data, trt) {  # all edentulous counterfactual scenario
 
 }
 
+
+d3.1 <-  function(data, trt) {  # What if >20 were 10-19
+
+  out <- list()
+  a= data[[trt]]
+
+  for (i in 1:length(a)) {
+    if (as.character(a[i]) %in% c('2','3','4')) {
+      out[[i]] <- as.character(a[i])
+
+    # }else if (as.character(a[i]=="3")){
+    #   as.numeric(as.character(a[i])) - 1
+    } else {
+      out[[i]] <- as.numeric(as.character(a[i])) + 1
+    }
+  }
+  factor(unlist(out),levels = c(1:4), ordered = TRUE)
+
+}
+
+
+d3.2 <-  function(data, trt) {  # What if  >20 were 10-19 & 10-19 were 1-9
+
+  out <- list()
+  a= data[[trt]]
+
+  for (i in 1:length(a)) {
+    if (as.character(a[i]) %in% c('3','4')) {
+      out[[i]] <- as.character(a[i])
+
+    # }else if (as.character(a[i]=="3")){
+    #   as.numeric(as.character(a[i])) - 1
+    } else {
+      out[[i]] <- as.numeric(as.character(a[i])) + 1
+    }
+  }
+  factor(unlist(out),levels = c(1:4), ordered = TRUE)
+
+}
+
+d3.3 <-  function(data, trt) {  # What if  >20 were 10-19 & 10-19 were 1-9 & 1-9 were edentulous
+
+  out <- list()
+  a= data[[trt]]
+
+  for (i in 1:length(a)) {
+    if (as.character(a[i]) %in% c('4')) {
+      out[[i]] <- as.character(a[i])
+
+    # }else if (as.character(a[i]=="3")){
+    #   as.numeric(as.character(a[i])) - 1
+    } else {
+      out[[i]] <- as.numeric(as.character(a[i])) + 1
+    }
+  }
+  factor(unlist(out),levels = c(1:4), ordered = TRUE)
+
+}
 
 d4 <-  function(data, trt) {  # if eden and 1-9 peple become 10-19
 
@@ -96,7 +167,7 @@ d4 <-  function(data, trt) {  # if eden and 1-9 peple become 10-19
 
 }
 
-d5 <-  function(data, trt) {  # all >20 counterfactual scenario
+d5 <-  function(data, trt) {  # What if all were edentulous
 
   out <- list()
   a= data[[trt]]
@@ -122,7 +193,8 @@ d5 <-  function(data, trt) {  # all >20 counterfactual scenario
 tar_option_set(packages = c("tidyverse", "haven",
                             "Gmisc", "htmlTable",
                             "flextable", "EValue",
-                            "lmtp","mice", "upulR"))
+                            "lmtp","mice", "upulR",
+                            "compareGroups"))
 
 
 plan(callr)
@@ -131,12 +203,12 @@ set.seed(198511110)
 # Starting the list of targets--------------------------------------------------
 list(
   tar_target(df_file,
-             "data/selected",
+             "data/selected.csv",
              format = "file")
   ,
   # Working data -------------------------------------------------------------
   tar_target(working_df,
-             readRDS(file=df_file))
+             read_csv(file=df_file))
   ,
 
   # create a dataset for descriptive analysis---------------------------------
@@ -146,15 +218,9 @@ list(
   ,
 
   tar_target(imp_data,
-             get_mice_data(descriptive_data ,
-                           mice_cars= c(expo[1],base_cov),
-                           imp_only_vars= c(expo[2],l1_cov, out),
-                           m=5))
+             get_mice_data(descriptive_data , m=5))
 
   ,
-
-
-
 
 
   # plot distribution of missing covariates ----------------------------------
@@ -178,29 +244,22 @@ list(
   ,
   # Flow of participants (Add connecting arrows using Inkscape)
   tar_target(sample_flowchart2,
-             flow_chart_imp(df= descriptive_data ,
-                            expo,out,base_cov,l1_cov))
+             flow_chart(df= descriptive_data))
   ,
 
-  # Table 1 --------------------------------------------------------------------
-  tar_target(tab1_data2,
-             get_tab1_data(descriptive_data),
-             format= "rds")
-  ,
+# Table 1 --------------------------------------------------------------------
 
-  tar_target(table_1_2,
-             upulR::create_table1(df = tab1_data2,
-                                  headvar = out,
-                                  rowvars = c(expo[1],base_cov),
-                                  headvar_na_level = "Censored",
-                                  file_name = "tables/table_1",
-                                  header = "Social participation in 2016"))
+  tar_target(table1,
+             get_table1(df=imp_data,
+                        y_var="Y2",
+                        file_name="tables/table1.csv"),
+             format= "file")
   ,
 
 
-  tar_target(dropouts_comparison2,
-             get_dropout_comparison(df=tab1_data2,
-                                    rowvars= c(expo[1],base_cov)))
+  tar_target(dropouts_comp,
+             get_dropout_comparison(df=descriptive_data),
+             format = "file")
 
   ,
 
@@ -208,11 +267,8 @@ list(
   # get a tmle ready data set---------------------------------------------------
   # dummify all categorical variables/ all variables as numeric
 
-  tar_target(tmle_data2,
-             get_tmle_data(imp_data) %>%
-               mutate_at(vars(A0_teeth,A1_teeth), ~factor(., levels = c(1:4),
-                                                          ordered = T))
-
+  tar_target(tmle_data,
+             get_tmle_data(imp_data)
              ,
 
              format= "rds")
@@ -220,18 +276,18 @@ list(
 
 
   # Set-up TMLE ----------------------------------------------------------------
-  tar_target(a, expo)  # time varying exposure (2010 & 2013)
+  tar_target(a,  c("A0_teeth","A1_teeth"))  # time varying exposure (2010 & 2013)
   ,
 
-  tar_target(y, out)   # Outcome (2016)
+  tar_target(y, "Y2")   # Outcome (2016)
   ,
   # Time-invariant covariates
-  tar_target(w, colnames(tmle_data2 %>% select(Age,Sex,contains("Y0"))))
+  tar_target(w, colnames(tmle_data %>% select(contains("w_"))))
 
   ,
   # time-varying covariates
-  tar_target(tv, list(colnames(tmle_data2 %>% select(contains("L0"))),
-                      colnames(tmle_data2 %>% select(contains("L1")))))
+  tar_target(tv, list(colnames(tmle_data %>% select(contains("L0"))),
+                      colnames(tmle_data %>% select(contains("L1")))))
   ,
 
   tar_target(cens, c("c1","c2"))
@@ -248,8 +304,7 @@ list(
                   time_vary=tv,
                   outcome_type = "binomial",
                   intervention_type ="mtp",
-                  cens = cens,
-                  k=0
+                  cens = cens
                   # ,
                   # learners_outcome = sl_lib,
                   # learners_trt = sl_lib
@@ -274,13 +329,13 @@ list(
                )
 
   ,
-
-  # Run TMLE --------------------------------------------------
-
-  tar_target(d, paste0("d",0:5))
-
-  ,
-
+#
+#   # Run TMLE --------------------------------------------------
+#
+#   tar_target(d, paste0("d",0:5))
+#
+#   ,
+#
   tar_target(m, 1:5)
 
   ,
@@ -288,12 +343,12 @@ list(
   tar_target(imps, cbind(imp=m) %>% as.data.frame())
 
   ,
-
-# with super learner -------
-
-  tar_target(tmle_d0sl,
+#
+# # with super learner -------
+#
+  tar_target(tmle_d0_sl,
              imps %>%
-               mutate(tmle=map(.x= imp, ~run_lmtp_imp_data(data = tmle_data2 ,
+               mutate(tmle=map(.x= imp, ~run_lmtp_imp_data(data = tmle_data ,
                                                            m= .x,
                                                            d= "d0",
                                                            params = params_sl))))
@@ -301,9 +356,9 @@ list(
   ,
 
 
-  tar_target(tmle_d1sl,
+  tar_target(tmle_d1_sl,
              imps %>%
-               mutate(tmle=map(.x= imp, ~run_lmtp_imp_data(data = tmle_data2 ,
+               mutate(tmle=map(.x= imp, ~run_lmtp_imp_data(data = tmle_data ,
                                                            m= .x,
                                                            d= "d1",
                                                            params = params_sl))))
@@ -311,9 +366,9 @@ list(
   ,
 
 
-  tar_target(tmle_d2sl,
+  tar_target(tmle_d2_sl,
              imps %>%
-               mutate(tmle=map(.x= imp, ~run_lmtp_imp_data(data = tmle_data2 ,
+               mutate(tmle=map(.x= imp, ~run_lmtp_imp_data(data = tmle_data ,
                                                            m= .x,
                                                            d= "d2",
                                                            params = params_sl))))
@@ -321,9 +376,9 @@ list(
   ,
 
 
-  tar_target(tmle_d3sl,
+  tar_target(tmle_d3_sl,
              imps %>%
-               mutate(tmle=map(.x= imp, ~run_lmtp_imp_data(data = tmle_data2 ,
+               mutate(tmle=map(.x= imp, ~run_lmtp_imp_data(data = tmle_data ,
                                                            m= .x,
                                                            d= "d3",
                                                            params = params_sl))))
@@ -331,102 +386,163 @@ list(
   ,
 
 
-  tar_target(tmle_d4sl,
+  tar_target(tmle_d4_sl,
              imps %>%
-               mutate(tmle=map(.x= imp, ~run_lmtp_imp_data(data = tmle_data2 ,
+               mutate(tmle=map(.x= imp, ~run_lmtp_imp_data(data = tmle_data ,
                                                            m= .x,
                                                            d= "d4",
                                                            params = params_sl))))
 
   ,
 
-  tar_target(tmle_d5sl,
+  tar_target(tmle_d5_sl,
              imps %>%
-               mutate(tmle=map(.x= imp, ~run_lmtp_imp_data(data = tmle_data2 ,
+               mutate(tmle=map(.x= imp, ~run_lmtp_imp_data(data = tmle_data ,
                                                            m= .x,
                                                            d= "d5",
                                                            params = params_sl))))
-
   ,
 
-  # without super learner ------
-
-  tar_target(tmle_d0,
+  tar_target(tmle_d1_2_sl,
              imps %>%
-               mutate(tmle=map(.x= imp, ~run_lmtp_imp_data(data = tmle_data2 ,
+               mutate(tmle=map(.x= imp, ~run_lmtp_imp_data(data = tmle_data ,
                                                            m= .x,
-                                                           d= "d0",
-                                                           params = params))))
-
+                                                           d= "d1.2",
+                                                           params = params_sl))))
   ,
 
-  tar_target(tmle_d1,
+  tar_target(tmle_d3_1_sl,
              imps %>%
-               mutate(tmle=map(.x= imp, ~run_lmtp_imp_data(data = tmle_data2 ,
+               mutate(tmle=map(.x= imp, ~run_lmtp_imp_data(data = tmle_data ,
                                                            m= .x,
-                                                           d= "d1",
-                                                           params = params))))
-
-  ,
-  tar_target(tmle_d2,
-             imps %>%
-               mutate(tmle=map(.x= imp, ~run_lmtp_imp_data(data = tmle_data2 ,
-                                                           m= .x,
-                                                           d= "d2",
-                                                           params = params))))
-
+                                                           d= "d3.1",
+                                                           params = params_sl))))
   ,
 
-  tar_target(tmle_d3,
+  tar_target(tmle_d3_2_sl,
              imps %>%
-               mutate(tmle=map(.x= imp, ~run_lmtp_imp_data(data = tmle_data2 ,
+               mutate(tmle=map(.x= imp, ~run_lmtp_imp_data(data = tmle_data ,
                                                            m= .x,
-                                                           d= "d3",
-                                                           params = params))))
-
+                                                           d= "d3.2",
+                                                           params = params_sl))))
   ,
 
-  tar_target(tmle_d4,
+  tar_target(tmle_d3_3_sl,
              imps %>%
-               mutate(tmle=map(.x= imp, ~run_lmtp_imp_data(data = tmle_data2 ,
+               mutate(tmle=map(.x= imp, ~run_lmtp_imp_data(data = tmle_data ,
                                                            m= .x,
-                                                           d= "d4",
-                                                           params = params))))
+                                                           d= "d3.3",
+                                                           params = params_sl))))
 
-  ,
-
-  tar_target(tmle_d5,
-             imps %>%
-               mutate(tmle=map(.x= imp, ~run_lmtp_imp_data(data = tmle_data2 ,
-                                                           m= .x,
-                                                           d= "d5",
-                                                           params = params))))
-
+  # ,
+#
+#   # without super learner ------
+#
+#   tar_target(tmle_d0,
+#              imps %>%
+#                mutate(tmle=map(.x= imp, ~run_lmtp_imp_data(data = tmle_data2 ,
+#                                                            m= .x,
+#                                                            d= "d0",
+#                                                            params = params))))
+#
+#   ,
+#
+#   tar_target(tmle_d1,
+#              imps %>%
+#                mutate(tmle=map(.x= imp, ~run_lmtp_imp_data(data = tmle_data2 ,
+#                                                            m= .x,
+#                                                            d= "d1",
+#                                                            params = params))))
+#
+#   ,
+#   tar_target(tmle_d2,
+#              imps %>%
+#                mutate(tmle=map(.x= imp, ~run_lmtp_imp_data(data = tmle_data2 ,
+#                                                            m= .x,
+#                                                            d= "d2",
+#                                                            params = params))))
+#
+#   ,
+#
+#   tar_target(tmle_d3,
+#              imps %>%
+#                mutate(tmle=map(.x= imp, ~run_lmtp_imp_data(data = tmle_data2 ,
+#                                                            m= .x,
+#                                                            d= "d3",
+#                                                            params = params))))
+#
+#   ,
+#
+#   tar_target(tmle_d4,
+#              imps %>%
+#                mutate(tmle=map(.x= imp, ~run_lmtp_imp_data(data = tmle_data2 ,
+#                                                            m= .x,
+#                                                            d= "d4",
+#                                                            params = params))))
+#
+#   ,
+#
+#   tar_target(tmle_d5,
+#              imps %>%
+#                mutate(tmle=map(.x= imp, ~run_lmtp_imp_data(data = tmle_data2 ,
+#                                                            m= .x,
+#                                                            d= "d5",
+#                                                            params = params))))
+#
   ,
 
 tar_target(results_sl,
 
            cbind(imp= imps$imp,
-                 d0= tmle_d0sl$tmle,
-                 d1= tmle_d1sl$tmle,
-                 d2= tmle_d2sl$tmle,
-                 d3= tmle_d3sl$tmle,
-                 d4= tmle_d4sl$tmle,
-                 d5= tmle_d5sl$tmle) %>%
+                 d0= tmle_d0_sl$tmle,
+                 d1= tmle_d1_sl$tmle,
+                 d1_2= tmle_d1_2_sl$tmle,
+                 d2= tmle_d2_sl$tmle,
+                 d3_1= tmle_d3_1_sl$tmle,
+                 d3_2= tmle_d3_2_sl$tmle,
+                 d3_3= tmle_d3_3_sl$tmle,
+                 d3= tmle_d3_sl$tmle,
+                 d4= tmle_d4_sl$tmle,
+                 d5= tmle_d5_sl$tmle) %>%
              as_tibble() %>%
              unnest(imp) %>%
              mutate(
                d0_vs_d1= map2(d1,d0,~lmtp::lmtp_contrast(.x,ref = .y, type="or")),
+               d0_vs_d1_2= map2(d1_2,d0,~lmtp::lmtp_contrast(.x,ref = .y, type="or")),
                d0_vs_d2= map2(d2,d0,~lmtp::lmtp_contrast(.x,ref = .y, type="or")),
+               d0_vs_d3_1= map2(d3_1,d0,~lmtp::lmtp_contrast(.x,ref = .y, type="or")),
+               d0_vs_d3_2= map2(d3_2,d0,~lmtp::lmtp_contrast(.x,ref = .y, type="or")),
+               d0_vs_d3_3= map2(d3_3,d0,~lmtp::lmtp_contrast(.x,ref = .y, type="or")),
                d0_vs_d3= map2(d3,d0,~lmtp::lmtp_contrast(.x,ref = .y, type="or")),
-               d0_vs_d4= map2(d4,d0,~lmtp::lmtp_contrast(.x,ref = .y, type="or")),
+               # d0_vs_d4= map2(d4,d0,~lmtp::lmtp_contrast(.x,ref = .y, type="or")),
                d0_vs_d5= map2(d5,d0,~lmtp::lmtp_contrast(.x,ref = .y, type="or")))
-           # %>%
-             # dplyr::select(imp,contains("vs")) %>%
-             # pivot_longer(!imp, names_to = "contrast", values_to = "results") %>%
-             # mutate(results= map(results,~.$vals)) %>%
-             # unnest(cols = results) %>% pool_estimates()
-           )
+           %>%
+             dplyr::select(imp,contains("vs")) %>%
+             pivot_longer(!imp, names_to = "contrast", values_to = "results") %>%
+             mutate(results= map(results,~.$vals)) %>%
+             unnest(cols = results) %>%
+             pool_estimates()
+)
+,
+
+tar_target(table2_data,
+           get_table2_data(results_sl))
+
+,
+
+tar_target(table_2,
+           get_table2(table2_data),
+           format= "file")
+,
+
+tar_target(figure_3,
+           plot_or(table2_data),
+           format= "file")
+# ,
+#
+#
+# tar_quarto(quar, path = "paper/main_text.qmd")
+
 
 # ,
 #

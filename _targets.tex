@@ -1,0 +1,1742 @@
+\documentclass{article}\usepackage[]{graphicx}\usepackage[]{color}
+% maxwidth is the original width if it is less than linewidth
+% otherwise use linewidth (to make sure the graphics do not exceed the margin)
+\makeatletter
+\def\maxwidth{ %
+  \ifdim\Gin@nat@width>\linewidth
+    \linewidth
+  \else
+    \Gin@nat@width
+  \fi
+}
+\makeatother
+
+\definecolor{fgcolor}{rgb}{0.345, 0.345, 0.345}
+\makeatletter
+\@ifundefined{AddToHook}{}{\AddToHook{package/xcolor/after}{\definecolor{fgcolor}{rgb}{0.345, 0.345, 0.345}}}
+\makeatother
+\newcommand{\hlnum}[1]{\textcolor[rgb]{0.686,0.059,0.569}{#1}}%
+\newcommand{\hlstr}[1]{\textcolor[rgb]{0.192,0.494,0.8}{#1}}%
+\newcommand{\hlcom}[1]{\textcolor[rgb]{0.678,0.584,0.686}{\textit{#1}}}%
+\newcommand{\hlopt}[1]{\textcolor[rgb]{0,0,0}{#1}}%
+\newcommand{\hlstd}[1]{\textcolor[rgb]{0.345,0.345,0.345}{#1}}%
+\newcommand{\hlkwa}[1]{\textcolor[rgb]{0.161,0.373,0.58}{\textbf{#1}}}%
+\newcommand{\hlkwb}[1]{\textcolor[rgb]{0.69,0.353,0.396}{#1}}%
+\newcommand{\hlkwc}[1]{\textcolor[rgb]{0.333,0.667,0.333}{#1}}%
+\newcommand{\hlkwd}[1]{\textcolor[rgb]{0.737,0.353,0.396}{\textbf{#1}}}%
+\let\hlipl\hlkwb
+
+\usepackage{framed}
+\makeatletter
+\newenvironment{kframe}{%
+ \def\at@end@of@kframe{}%
+ \ifinner\ifhmode%
+  \def\at@end@of@kframe{\end{minipage}}%
+  \begin{minipage}{\columnwidth}%
+ \fi\fi%
+ \def\FrameCommand##1{\hskip\@totalleftmargin \hskip-\fboxsep
+ \colorbox{shadecolor}{##1}\hskip-\fboxsep
+     % There is no \\@totalrightmargin, so:
+     \hskip-\linewidth \hskip-\@totalleftmargin \hskip\columnwidth}%
+ \MakeFramed {\advance\hsize-\width
+   \@totalleftmargin\z@ \linewidth\hsize
+   \@setminipage}}%
+ {\par\unskip\endMakeFramed%
+ \at@end@of@kframe}
+\makeatother
+
+\definecolor{shadecolor}{rgb}{.97, .97, .97}
+\definecolor{messagecolor}{rgb}{0, 0, 0}
+\definecolor{warningcolor}{rgb}{1, 0, 1}
+\definecolor{errorcolor}{rgb}{1, 0, 0}
+\makeatletter
+\@ifundefined{AddToHook}{}{\AddToHook{package/xcolor/after}{
+\definecolor{shadecolor}{rgb}{.97, .97, .97}
+\definecolor{messagecolor}{rgb}{0, 0, 0}
+\definecolor{warningcolor}{rgb}{1, 0, 1}
+\definecolor{errorcolor}{rgb}{1, 0, 0}
+}}
+\makeatother
+\newenvironment{knitrout}{}{} % an empty environment to be redefined in TeX
+
+\usepackage{alltt}
+\usepackage[sc]{mathpazo}
+\renewcommand{\sfdefault}{lmss}
+\renewcommand{\ttdefault}{lmtt}
+\usepackage[T1]{fontenc}
+\usepackage{geometry}
+\geometry{verbose,tmargin=2.5cm,bmargin=2.5cm,lmargin=2.5cm,rmargin=2.5cm}
+\setcounter{secnumdepth}{2}
+\setcounter{tocdepth}{2}
+\usepackage[unicode=true,pdfusetitle,
+ bookmarks=true,bookmarksnumbered=true,bookmarksopen=true,bookmarksopenlevel=2,
+ breaklinks=false,pdfborder={0 0 1},backref=false,colorlinks=false]
+ {hyperref}
+\hypersetup{
+ pdfstartview={XYZ null null 1}}
+
+\makeatletter
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% User specified LaTeX commands.
+\renewcommand{\textfraction}{0.05}
+\renewcommand{\topfraction}{0.8}
+\renewcommand{\bottomfraction}{0.8}
+\renewcommand{\floatpagefraction}{0.75}
+
+\makeatother
+\IfFileExists{upquote.sty}{\usepackage{upquote}}{}
+\begin{document}
+
+
+
+\title{}
+
+
+
+\maketitle
+The results below are generated from an R script.
+
+\begin{knitrout}
+\definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}\begin{kframe}
+\begin{alltt}
+\hlkwd{library}\hlstd{(targets)}
+\hlkwd{library}\hlstd{(upulR)} \hlcom{# personal R package for creating Table-1}
+
+\hlkwd{library}\hlstd{(future)}
+\hlkwd{library}\hlstd{(future.callr)}
+
+
+
+\hlcom{# Define custom functions and other global objects -----------------------------}
+\hlkwd{source}\hlstd{(}\hlstr{"R/functions.R"}\hlstd{)}
+\hlkwd{source}\hlstd{(}\hlstr{"R/helper_functions.R"}\hlstd{)}
+
+
+
+\hlstd{base_cov} \hlkwb{<-} \hlkwd{c}\hlstd{(}\hlstr{"Age"}\hlstd{,}\hlstr{"Sex"}\hlstd{,}\hlstr{"L0_inc"}\hlstd{,} \hlstr{"Y0_any"}\hlstd{,}\hlstr{"L0_den"}\hlstd{,} \hlstr{"L0_mari"}\hlstd{,}\hlstr{"L0_srh"}\hlstd{)}
+\hlstd{l1_cov} \hlkwb{<-} \hlkwd{c}\hlstd{(}\hlstr{"L1_inc"}\hlstd{,} \hlstr{"L1_den"}\hlstd{,} \hlstr{"L1_mari"}\hlstd{,} \hlstr{"L1_srh"}\hlstd{)}
+\hlstd{expo} \hlkwb{<-} \hlkwd{c}\hlstd{(}\hlstr{"A0_teeth"}\hlstd{,}\hlstr{"A1_teeth"}\hlstd{)}
+\hlstd{out} \hlkwb{<-} \hlstr{"Y2"}
+
+
+\hlstd{d0} \hlkwb{<-}  \hlkwa{NULL}
+
+\hlstd{d1} \hlkwb{<-}  \hlkwa{function}\hlstd{(}\hlkwc{data}\hlstd{,} \hlkwc{trt}\hlstd{) \{}
+  \hlstd{(data[[trt]]}\hlopt{==}\hlnum{1}\hlstd{)}\hlopt{*}\hlstd{data[[trt]]}\hlopt{+} \hlstd{(data[[trt]]}\hlopt{!=}\hlnum{1}\hlstd{)}\hlopt{*} \hlnum{1}
+\hlstd{\}}
+
+\hlstd{d2} \hlkwb{<-}  \hlkwa{function}\hlstd{(}\hlkwc{data}\hlstd{,} \hlkwc{trt}\hlstd{) \{}
+  \hlstd{(data[[trt]]}\hlopt{==}\hlnum{2}\hlstd{)}\hlopt{*}\hlstd{data[[trt]]}\hlopt{+} \hlstd{(data[[trt]]}\hlopt{!=}\hlnum{2}\hlstd{)}\hlopt{*} \hlnum{2}
+\hlstd{\}}
+
+\hlstd{d3} \hlkwb{<-}  \hlkwa{function}\hlstd{(}\hlkwc{data}\hlstd{,} \hlkwc{trt}\hlstd{) \{}
+  \hlstd{(data[[trt]]}\hlopt{==}\hlnum{3}\hlstd{)}\hlopt{*}\hlstd{data[[trt]]}\hlopt{+} \hlstd{(data[[trt]]}\hlopt{!=}\hlnum{3}\hlstd{)}\hlopt{*} \hlnum{3}
+\hlstd{\}}
+
+\hlstd{d4} \hlkwb{<-}  \hlkwa{function}\hlstd{(}\hlkwc{data}\hlstd{,} \hlkwc{trt}\hlstd{) \{}
+  \hlstd{(data[[trt]]}\hlopt{==}\hlnum{4}\hlstd{)}\hlopt{*}\hlstd{data[[trt]]}\hlopt{+} \hlstd{(data[[trt]]}\hlopt{!=}\hlnum{4}\hlstd{)}\hlopt{*} \hlnum{4}
+\hlstd{\}}
+
+
+
+
+
+\hlcom{# Set target-specific options such as packages-----------------------------------}
+\hlkwd{tar_option_set}\hlstd{(}\hlkwc{packages} \hlstd{=} \hlkwd{c}\hlstd{(}\hlstr{"tidyverse"}\hlstd{,} \hlstr{"haven"}\hlstd{,}
+                            \hlstr{"Gmisc"}\hlstd{,} \hlstr{"htmlTable"}\hlstd{,}
+                            \hlstr{"flextable"}\hlstd{,} \hlstr{"EValue"}\hlstd{,}
+                            \hlstr{"lmtp"}\hlstd{,}\hlstr{"mice"}\hlstd{,} \hlstr{"upulR"}\hlstd{))}
+
+
+\hlkwd{plan}\hlstd{(callr)}
+
+\hlcom{# Starting the list of targets--------------------------------------------------}
+\hlkwd{list}\hlstd{(}
+  \hlkwd{tar_target}\hlstd{(df_file,}
+             \hlstr{"data/selected"}\hlstd{,}
+             \hlkwc{format} \hlstd{=} \hlstr{"file"}\hlstd{)}
+  \hlstd{,}
+  \hlcom{# Working data -------------------------------------------------------------}
+  \hlkwd{tar_target}\hlstd{(working_df,}
+             \hlkwd{readRDS}\hlstd{(}\hlkwc{file}\hlstd{=df_file))}
+  \hlstd{,}
+
+  \hlcom{# create a dataset for descriptive analysis---------------------------------}
+  \hlkwd{tar_target}\hlstd{(descriptive_data,}
+             \hlkwd{get_descriptive_data}\hlstd{(working_df))}
+
+  \hlstd{,}
+
+  \hlkwd{tar_target}\hlstd{(imp_data,}
+             \hlkwd{get_mice_data}\hlstd{(descriptive_data ,}
+                           \hlkwc{mice_cars}\hlstd{=} \hlkwd{c}\hlstd{(expo[}\hlnum{1}\hlstd{],base_cov),}
+                           \hlkwc{imp_only_vars}\hlstd{=} \hlkwd{c}\hlstd{(expo[}\hlnum{2}\hlstd{],l1_cov, out),}
+                           \hlkwc{m}\hlstd{=}\hlnum{5}\hlstd{))}
+
+  \hlstd{,}
+
+
+
+
+
+  \hlcom{# plot distribution of missing covariates ----------------------------------}
+  \hlkwd{tar_target}\hlstd{(mis_by_outcome2,}
+             \hlkwd{plot_missing}\hlstd{(descriptive_data,}
+                          \hlkwc{by_var} \hlstd{=} \hlstr{"Y2"}\hlstd{,}
+                          \hlkwc{x_lab} \hlstd{=} \hlstr{"Social participation in 2016 (Outcome)"}\hlstd{)} \hlopt{%>%}
+               \hlstd{ggplot2}\hlopt{::}\hlkwd{ggsave}\hlstd{(}\hlkwc{filename} \hlstd{=} \hlstr{"figures/missing_outcome.svg"}\hlstd{,}
+                               \hlkwc{width} \hlstd{=} \hlnum{12}\hlstd{,}\hlkwc{height} \hlstd{=} \hlnum{10} \hlstd{),}
+             \hlkwc{format}\hlstd{=} \hlstr{"file"}\hlstd{)}
+
+  \hlstd{,}
+  \hlkwd{tar_target}\hlstd{(mis_by_exposure2,}
+             \hlkwd{plot_missing}\hlstd{(descriptive_data,}
+                          \hlkwc{by_var} \hlstd{=} \hlstr{"A0_teeth"}\hlstd{,}
+                          \hlkwc{x_lab} \hlstd{=} \hlstr{"Number of teeth at baseline"}\hlstd{)} \hlopt{%>%}
+               \hlstd{ggplot2}\hlopt{::}\hlkwd{ggsave}\hlstd{(}\hlkwc{filename} \hlstd{=} \hlstr{"figures/missing_exposure.svg"}\hlstd{,}
+                               \hlkwc{width} \hlstd{=} \hlnum{12}\hlstd{,}\hlkwc{height} \hlstd{=} \hlnum{10} \hlstd{),}
+             \hlkwc{format}\hlstd{=} \hlstr{"file"}\hlstd{)}
+
+  \hlstd{,}
+  \hlcom{# Flow of participants (Add connecting arrows using Inkscape)}
+  \hlkwd{tar_target}\hlstd{(sample_flowchart2,}
+             \hlkwd{flow_chart_imp}\hlstd{(}\hlkwc{df}\hlstd{= descriptive_data ,}
+                        \hlstd{expo,out,base_cov,l1_cov))}
+  \hlstd{,}
+
+  \hlcom{# Table 1 --------------------------------------------------------------------}
+  \hlkwd{tar_target}\hlstd{(tab1_data2,}
+             \hlkwd{get_tab1_data}\hlstd{(descriptive_data),}
+             \hlkwc{format}\hlstd{=} \hlstr{"rds"}\hlstd{)}
+  \hlstd{,}
+
+  \hlkwd{tar_target}\hlstd{(table_1_2,}
+             \hlstd{upulR}\hlopt{::}\hlkwd{create_table1}\hlstd{(}\hlkwc{df} \hlstd{= tab1_data2,}
+                           \hlkwc{headvar} \hlstd{= out,}
+                           \hlkwc{rowvars} \hlstd{=} \hlkwd{c}\hlstd{(expo[}\hlnum{1}\hlstd{],base_cov),}
+                           \hlkwc{headvar_na_level} \hlstd{=} \hlstr{"Censored"}\hlstd{,}
+                           \hlkwc{file_name} \hlstd{=} \hlstr{"tables/table_1"}\hlstd{,}
+                           \hlkwc{header} \hlstd{=} \hlstr{"Social participation in 2016"}\hlstd{))}
+  \hlstd{,}
+
+
+  \hlkwd{tar_target}\hlstd{(dropouts_comparison2,}
+             \hlkwd{get_dropout_comparison}\hlstd{(}\hlkwc{df}\hlstd{=tab1_data2,}
+                                    \hlkwc{rowvars}\hlstd{=} \hlkwd{c}\hlstd{(expo[}\hlnum{1}\hlstd{],base_cov)))}
+
+  \hlstd{,}
+
+
+  \hlcom{# get a tmle ready data set-----------------------------------------------------------}
+  \hlcom{# dummify all categorical variables/ all variables as numeric}
+
+  \hlkwd{tar_target}\hlstd{(tmle_data2,}
+             \hlkwd{get_tmle_data}\hlstd{(imp_data),}
+             \hlkwc{format}\hlstd{=} \hlstr{"rds"}\hlstd{)}
+  \hlstd{,}
+
+
+  \hlcom{# Set-up TMLE --------------------------------------------------------------}
+  \hlkwd{tar_target}\hlstd{(a, expo)}  \hlcom{# time varying exposure (2010 & 2013)}
+  \hlstd{,}
+
+  \hlkwd{tar_target}\hlstd{(y, out)}   \hlcom{# Outcome (2016)}
+  \hlstd{,}
+  \hlcom{# Time-invariant covariates}
+  \hlkwd{tar_target}\hlstd{(w,} \hlkwd{colnames}\hlstd{(tmle_data2} \hlopt{%>%} \hlkwd{select}\hlstd{(Age,Sex,}\hlkwd{contains}\hlstd{(}\hlstr{"Y0"}\hlstd{))))}
+
+  \hlstd{,}
+  \hlcom{# time-varying covariates}
+  \hlkwd{tar_target}\hlstd{(tv,} \hlkwd{list}\hlstd{(}\hlkwd{colnames}\hlstd{(tmle_data2} \hlopt{%>%} \hlkwd{select}\hlstd{(}\hlkwd{contains}\hlstd{(}\hlstr{"L0"}\hlstd{))),}
+                      \hlkwd{colnames}\hlstd{(tmle_data2} \hlopt{%>%} \hlkwd{select}\hlstd{(}\hlkwd{contains}\hlstd{(}\hlstr{"L1"}\hlstd{)))))}
+  \hlstd{,}
+
+  \hlkwd{tar_target}\hlstd{(cens,} \hlkwd{c}\hlstd{(}\hlstr{"c1"}\hlstd{,}\hlstr{"c2"}\hlstd{))}
+  \hlstd{,}
+
+  \hlkwd{tar_target}\hlstd{(sl_lib,} \hlkwd{c}\hlstd{(}\hlstr{"SL.glm"}\hlstd{,} \hlstr{"SL.xgboost"}\hlstd{,} \hlstr{"SL.nnet"}\hlstd{))}
+
+  \hlstd{,}
+
+  \hlkwd{tar_target}\hlstd{(params,}
+             \hlkwd{list}\hlstd{(}\hlkwc{trt} \hlstd{= a,}
+                  \hlkwc{outcome} \hlstd{= y ,}
+                  \hlkwc{baseline} \hlstd{= w ,}
+                  \hlkwc{time_vary}\hlstd{=tv,}
+                  \hlkwc{outcome_type} \hlstd{=} \hlstr{"binomial"}\hlstd{,}
+                  \hlkwc{cens} \hlstd{= cens,}
+                  \hlkwc{k}\hlstd{=}\hlnum{0}
+                  \hlcom{# ,}
+                  \hlcom{# learners_outcome = sl_lib,}
+                  \hlcom{# learners_trt = sl_lib}
+             \hlstd{))}
+  \hlstd{,}
+
+  \hlcom{# Define shift functions to shift exposure----------------------------------}
+
+
+  \hlcom{# Run TMLE --------------------------------------------------}
+
+  \hlkwd{tar_target}\hlstd{(tmle_res_m1_noSL,}
+             \hlkwd{lapply}\hlstd{(}\hlkwd{paste0}\hlstd{(}\hlstr{"d"}\hlstd{,}\hlnum{0}\hlopt{:}\hlnum{4}\hlstd{) ,}
+                    \hlkwa{function} \hlstd{(}\hlkwc{x}\hlstd{)} \hlkwd{do.call}\hlstd{(run_lmtp,}
+                              \hlkwd{c}\hlstd{(params,} \hlkwd{list}\hlstd{(}\hlkwc{data}\hlstd{= tmle_data2} \hlopt{%>%} \hlkwd{filter}\hlstd{(.imp}\hlopt{==}\hlnum{1}\hlstd{),}
+                                             \hlkwc{shift}\hlstd{=} \hlkwd{eval}\hlstd{(}\hlkwd{as.symbol}\hlstd{(x))))}
+                      \hlstd{)))}
+  \hlstd{,}
+
+  \hlkwd{tar_target}\hlstd{(tmle_res_m1_SL,}
+             \hlkwd{lapply}\hlstd{(}\hlkwd{paste0}\hlstd{(}\hlstr{"d"}\hlstd{,}\hlnum{0}\hlopt{:}\hlnum{4}\hlstd{) ,}
+                    \hlkwa{function} \hlstd{(}\hlkwc{x}\hlstd{)} \hlkwd{do.call}\hlstd{(run_lmtp,}
+                              \hlkwd{c}\hlstd{(params,} \hlkwd{list}\hlstd{(}\hlkwc{data}\hlstd{= tmle_data2} \hlopt{%>%} \hlkwd{filter}\hlstd{(.imp}\hlopt{==}\hlnum{1}\hlstd{),}
+                                             \hlkwc{learners_outcome} \hlstd{= sl_lib,}
+                                             \hlkwc{learners_trt} \hlstd{= sl_lib,}
+                                             \hlkwc{shift}\hlstd{=} \hlkwd{eval}\hlstd{(}\hlkwd{as.symbol}\hlstd{(x))))}
+                      \hlstd{)))}
+  \hlstd{,}
+  \hlkwd{tar_target}\hlstd{(tmle_res_m2_noSL,}
+             \hlkwd{lapply}\hlstd{(}\hlkwd{paste0}\hlstd{(}\hlstr{"d"}\hlstd{,}\hlnum{0}\hlopt{:}\hlnum{4}\hlstd{) ,}
+                    \hlkwa{function} \hlstd{(}\hlkwc{x}\hlstd{)} \hlkwd{do.call}\hlstd{(run_lmtp,}
+                              \hlkwd{c}\hlstd{(params,} \hlkwd{list}\hlstd{(}\hlkwc{data}\hlstd{= tmle_data2} \hlopt{%>%} \hlkwd{filter}\hlstd{(.imp}\hlopt{==}\hlnum{2}\hlstd{),}
+                                             \hlkwc{shift}\hlstd{=} \hlkwd{eval}\hlstd{(}\hlkwd{as.symbol}\hlstd{(x))))}
+                      \hlstd{)))}
+  \hlstd{,}
+
+  \hlkwd{tar_target}\hlstd{(tmle_res_m2_SL,}
+             \hlkwd{lapply}\hlstd{(}\hlkwd{paste0}\hlstd{(}\hlstr{"d"}\hlstd{,}\hlnum{0}\hlopt{:}\hlnum{4}\hlstd{) ,}
+                    \hlkwa{function} \hlstd{(}\hlkwc{x}\hlstd{)} \hlkwd{do.call}\hlstd{(run_lmtp,}
+                              \hlkwd{c}\hlstd{(params,} \hlkwd{list}\hlstd{(}\hlkwc{data}\hlstd{= tmle_data2} \hlopt{%>%} \hlkwd{filter}\hlstd{(.imp}\hlopt{==}\hlnum{2}\hlstd{),}
+                                             \hlkwc{learners_outcome} \hlstd{= sl_lib,}
+                                             \hlkwc{learners_trt} \hlstd{= sl_lib,}
+                                             \hlkwc{shift}\hlstd{=} \hlkwd{eval}\hlstd{(}\hlkwd{as.symbol}\hlstd{(x))))}
+                      \hlstd{)))}
+  \hlstd{,}
+
+  \hlkwd{tar_target}\hlstd{(tmle_res_m3_noSL,}
+             \hlkwd{lapply}\hlstd{(}\hlkwd{paste0}\hlstd{(}\hlstr{"d"}\hlstd{,}\hlnum{0}\hlopt{:}\hlnum{4}\hlstd{) ,}
+                    \hlkwa{function} \hlstd{(}\hlkwc{x}\hlstd{)} \hlkwd{do.call}\hlstd{(run_lmtp,}
+                              \hlkwd{c}\hlstd{(params,} \hlkwd{list}\hlstd{(}\hlkwc{data}\hlstd{= tmle_data2} \hlopt{%>%} \hlkwd{filter}\hlstd{(.imp}\hlopt{==}\hlnum{3}\hlstd{),}
+                                             \hlkwc{shift}\hlstd{=} \hlkwd{eval}\hlstd{(}\hlkwd{as.symbol}\hlstd{(x))))}
+                      \hlstd{)))}
+  \hlstd{,}
+
+  \hlkwd{tar_target}\hlstd{(tmle_res_m3_SL,}
+             \hlkwd{lapply}\hlstd{(}\hlkwd{paste0}\hlstd{(}\hlstr{"d"}\hlstd{,}\hlnum{0}\hlopt{:}\hlnum{4}\hlstd{) ,}
+                    \hlkwa{function} \hlstd{(}\hlkwc{x}\hlstd{)} \hlkwd{do.call}\hlstd{(run_lmtp,}
+                              \hlkwd{c}\hlstd{(params,} \hlkwd{list}\hlstd{(}\hlkwc{data}\hlstd{= tmle_data2} \hlopt{%>%} \hlkwd{filter}\hlstd{(.imp}\hlopt{==}\hlnum{3}\hlstd{),}
+                                             \hlkwc{learners_outcome} \hlstd{= sl_lib,}
+                                             \hlkwc{learners_trt} \hlstd{= sl_lib,}
+                                             \hlkwc{shift}\hlstd{=} \hlkwd{eval}\hlstd{(}\hlkwd{as.symbol}\hlstd{(x))))}
+                      \hlstd{)))}
+  \hlstd{,}
+  \hlkwd{tar_target}\hlstd{(tmle_res_m4_noSL,}
+             \hlkwd{lapply}\hlstd{(}\hlkwd{paste0}\hlstd{(}\hlstr{"d"}\hlstd{,}\hlnum{0}\hlopt{:}\hlnum{4}\hlstd{) ,}
+                    \hlkwa{function} \hlstd{(}\hlkwc{x}\hlstd{)} \hlkwd{do.call}\hlstd{(run_lmtp,}
+                              \hlkwd{c}\hlstd{(params,} \hlkwd{list}\hlstd{(}\hlkwc{data}\hlstd{= tmle_data2} \hlopt{%>%} \hlkwd{filter}\hlstd{(.imp}\hlopt{==}\hlnum{4}\hlstd{),}
+                                             \hlkwc{shift}\hlstd{=} \hlkwd{eval}\hlstd{(}\hlkwd{as.symbol}\hlstd{(x))))}
+                      \hlstd{)))}
+  \hlstd{,}
+
+  \hlkwd{tar_target}\hlstd{(tmle_res_m4_SL,}
+             \hlkwd{lapply}\hlstd{(}\hlkwd{paste0}\hlstd{(}\hlstr{"d"}\hlstd{,}\hlnum{0}\hlopt{:}\hlnum{4}\hlstd{) ,}
+                    \hlkwa{function} \hlstd{(}\hlkwc{x}\hlstd{)} \hlkwd{do.call}\hlstd{(run_lmtp,}
+                              \hlkwd{c}\hlstd{(params,} \hlkwd{list}\hlstd{(}\hlkwc{data}\hlstd{= tmle_data2} \hlopt{%>%} \hlkwd{filter}\hlstd{(.imp}\hlopt{==}\hlnum{4}\hlstd{),}
+                                             \hlkwc{learners_outcome} \hlstd{= sl_lib,}
+                                             \hlkwc{learners_trt} \hlstd{= sl_lib,}
+                                             \hlkwc{shift}\hlstd{=} \hlkwd{eval}\hlstd{(}\hlkwd{as.symbol}\hlstd{(x))))}
+                      \hlstd{)))}
+  \hlstd{,}
+  \hlkwd{tar_target}\hlstd{(tmle_res_m5_noSL,}
+             \hlkwd{lapply}\hlstd{(}\hlkwd{paste0}\hlstd{(}\hlstr{"d"}\hlstd{,}\hlnum{0}\hlopt{:}\hlnum{4}\hlstd{) ,}
+                    \hlkwa{function} \hlstd{(}\hlkwc{x}\hlstd{)} \hlkwd{do.call}\hlstd{(run_lmtp,}
+                              \hlkwd{c}\hlstd{(params,} \hlkwd{list}\hlstd{(}\hlkwc{data}\hlstd{= tmle_data2} \hlopt{%>%} \hlkwd{filter}\hlstd{(.imp}\hlopt{==}\hlnum{5}\hlstd{),}
+                                             \hlkwc{shift}\hlstd{=} \hlkwd{eval}\hlstd{(}\hlkwd{as.symbol}\hlstd{(x))))}
+                      \hlstd{)))}
+  \hlstd{,}
+
+  \hlkwd{tar_target}\hlstd{(tmle_res_m5_SL,}
+             \hlkwd{lapply}\hlstd{(}\hlkwd{paste0}\hlstd{(}\hlstr{"d"}\hlstd{,}\hlnum{0}\hlopt{:}\hlnum{4}\hlstd{) ,}
+                    \hlkwa{function} \hlstd{(}\hlkwc{x}\hlstd{)} \hlkwd{do.call}\hlstd{(run_lmtp,}
+                              \hlkwd{c}\hlstd{(params,} \hlkwd{list}\hlstd{(}\hlkwc{data}\hlstd{= tmle_data2} \hlopt{%>%} \hlkwd{filter}\hlstd{(.imp}\hlopt{==}\hlnum{5}\hlstd{),}
+                                             \hlkwc{learners_outcome} \hlstd{= sl_lib,}
+                                             \hlkwc{learners_trt} \hlstd{= sl_lib,}
+                                             \hlkwc{shift}\hlstd{=} \hlkwd{eval}\hlstd{(}\hlkwd{as.symbol}\hlstd{(x))))}
+                      \hlstd{)))}
+  \hlstd{,}
+
+
+  \hlcom{# contrast & pool ref=d0, est= "sl" -----}
+
+  \hlkwd{tar_target}\hlstd{(res_d0_sl,}
+             \hlkwd{get_pooled_results}\hlstd{(tmle_res_m1_SL,}
+                                \hlstd{tmle_res_m2_SL,}
+                                \hlstd{tmle_res_m3_SL,}
+                                \hlstd{tmle_res_m4_SL,}
+                                \hlstd{tmle_res_m5_SL,}
+                                \hlkwc{est}\hlstd{=} \hlstr{"sl"}\hlstd{,}
+                                \hlkwc{ref_d} \hlstd{=} \hlnum{0L}\hlstd{))}
+
+  \hlstd{,}
+
+  \hlcom{# contrast & pool ref=d1, est= "sl" -----}
+
+  \hlkwd{tar_target}\hlstd{(res_d1_sl,}
+             \hlkwd{get_pooled_results}\hlstd{(tmle_res_m1_SL,}
+                                \hlstd{tmle_res_m2_SL,}
+                                \hlstd{tmle_res_m3_SL,}
+                                \hlstd{tmle_res_m4_SL,}
+                                \hlstd{tmle_res_m5_SL,}
+                                \hlkwc{est}\hlstd{=} \hlstr{"sl"}\hlstd{,}
+                                \hlkwc{ref_d} \hlstd{=} \hlnum{1L}\hlstd{))}
+
+  \hlstd{,}
+
+
+  \hlcom{# contrast & pool ref=d0, est= "glm" -----}
+
+  \hlkwd{tar_target}\hlstd{(res_d0_glm,}
+             \hlkwd{get_pooled_results}\hlstd{(tmle_res_m1_noSL,}
+                                \hlstd{tmle_res_m2_noSL,}
+                                \hlstd{tmle_res_m3_noSL,}
+                                \hlstd{tmle_res_m4_noSL,}
+                                \hlstd{tmle_res_m5_noSL,}
+                                \hlkwc{est}\hlstd{=} \hlstr{"glm"}\hlstd{,}
+                                \hlkwc{ref_d} \hlstd{=} \hlnum{0L}\hlstd{))}
+
+  \hlstd{,}
+
+  \hlcom{# contrast & pool ref=d1, est= "glm" -----}
+
+  \hlkwd{tar_target}\hlstd{(res_d1_glm,}
+             \hlkwd{get_pooled_results}\hlstd{(tmle_res_m1_noSL,}
+                                \hlstd{tmle_res_m2_noSL,}
+                                \hlstd{tmle_res_m3_noSL,}
+                                \hlstd{tmle_res_m4_noSL,}
+                                \hlstd{tmle_res_m5_noSL,}
+                                \hlkwc{est}\hlstd{=} \hlstr{"glm"}\hlstd{,}
+                                \hlkwc{ref_d} \hlstd{=} \hlnum{1L}\hlstd{))}
+
+  \hlstd{,}
+
+
+  \hlcom{# combine pooled results -----}
+
+  \hlkwd{tar_target}\hlstd{(pooled_estimates,}
+             \hlkwd{rbind}\hlstd{(res_d0_sl,res_d1_sl,}
+                   \hlstd{res_d0_glm,res_d1_glm))}
+  \hlstd{,}
+
+
+  \hlkwd{tar_target}\hlstd{(table_2,}
+             \hlkwd{get_table2}\hlstd{(pooled_estimates),}
+             \hlkwc{format}\hlstd{=} \hlstr{"file"}\hlstd{)}
+  \hlstd{,}
+
+  \hlkwd{tar_target}\hlstd{(figure_2,}
+             \hlkwd{get_figure2}\hlstd{(pooled_estimates),}
+             \hlkwc{format} \hlstd{=} \hlstr{"file"}\hlstd{)}
+
+
+
+\hlstd{)}
+\end{alltt}
+\begin{verbatim}
+## [[1]]
+## <tar_stem> 
+##   name: df_file 
+##   command:
+##     "data/selected" 
+##   format: file 
+##   iteration method: vector 
+##   error mode: stop 
+##   memory mode: persistent 
+##   storage mode: main 
+##   retrieval mode: main 
+##   deployment mode: worker 
+##   priority: 0 
+##   resources:
+##     list() 
+##   cue:
+##     mode: thorough
+##     command: TRUE
+##     depend: TRUE
+##     format: TRUE
+##     iteration: TRUE
+##     file: TRUE 
+##   packages:
+##     tidyverse
+##     haven
+##     Gmisc
+##     htmlTable
+##     flextable
+##     EValue
+##     lmtp
+##     mice
+##     upulR 
+##   library:
+##     NULL
+## [[2]]
+## <tar_stem> 
+##   name: working_df 
+##   command:
+##     readRDS(file = df_file) 
+##   format: rds 
+##   iteration method: vector 
+##   error mode: stop 
+##   memory mode: persistent 
+##   storage mode: main 
+##   retrieval mode: main 
+##   deployment mode: worker 
+##   priority: 0 
+##   resources:
+##     list() 
+##   cue:
+##     mode: thorough
+##     command: TRUE
+##     depend: TRUE
+##     format: TRUE
+##     iteration: TRUE
+##     file: TRUE 
+##   packages:
+##     tidyverse
+##     haven
+##     Gmisc
+##     htmlTable
+##     flextable
+##     EValue
+##     lmtp
+##     mice
+##     upulR 
+##   library:
+##     NULL
+## [[3]]
+## <tar_stem> 
+##   name: descriptive_data 
+##   command:
+##     get_descriptive_data(working_df) 
+##   format: rds 
+##   iteration method: vector 
+##   error mode: stop 
+##   memory mode: persistent 
+##   storage mode: main 
+##   retrieval mode: main 
+##   deployment mode: worker 
+##   priority: 0 
+##   resources:
+##     list() 
+##   cue:
+##     mode: thorough
+##     command: TRUE
+##     depend: TRUE
+##     format: TRUE
+##     iteration: TRUE
+##     file: TRUE 
+##   packages:
+##     tidyverse
+##     haven
+##     Gmisc
+##     htmlTable
+##     flextable
+##     EValue
+##     lmtp
+##     mice
+##     upulR 
+##   library:
+##     NULL
+## [[4]]
+## <tar_stem> 
+##   name: imp_data 
+##   command:
+##     get_mice_data(descriptive_data, mice_cars = c(expo[1], 
+##         base_cov), imp_only_vars = c(expo[2], l1_cov, out), m = 5) 
+##   format: rds 
+##   iteration method: vector 
+##   error mode: stop 
+##   memory mode: persistent 
+##   storage mode: main 
+##   retrieval mode: main 
+##   deployment mode: worker 
+##   priority: 0 
+##   resources:
+##     list() 
+##   cue:
+##     mode: thorough
+##     command: TRUE
+##     depend: TRUE
+##     format: TRUE
+##     iteration: TRUE
+##     file: TRUE 
+##   packages:
+##     tidyverse
+##     haven
+##     Gmisc
+##     htmlTable
+##     flextable
+##     EValue
+##     lmtp
+##     mice
+##     upulR 
+##   library:
+##     NULL
+## [[5]]
+## <tar_stem> 
+##   name: mis_by_outcome2 
+##   command:
+##     plot_missing(descriptive_data, by_var = "Y2", x_lab = "Social participation in 2016 (Outcome)") %>% 
+##         ggplot2::ggsave(filename = "figures/missing_outcome.svg", 
+##             width = 12, height = 10) 
+##   format: file 
+##   iteration method: vector 
+##   error mode: stop 
+##   memory mode: persistent 
+##   storage mode: main 
+##   retrieval mode: main 
+##   deployment mode: worker 
+##   priority: 0 
+##   resources:
+##     list() 
+##   cue:
+##     mode: thorough
+##     command: TRUE
+##     depend: TRUE
+##     format: TRUE
+##     iteration: TRUE
+##     file: TRUE 
+##   packages:
+##     tidyverse
+##     haven
+##     Gmisc
+##     htmlTable
+##     flextable
+##     EValue
+##     lmtp
+##     mice
+##     upulR 
+##   library:
+##     NULL
+## [[6]]
+## <tar_stem> 
+##   name: mis_by_exposure2 
+##   command:
+##     plot_missing(descriptive_data, by_var = "A0_teeth", 
+##         x_lab = "Number of teeth at baseline") %>% ggplot2::ggsave(filename = "figures/missing_exposure.svg", 
+##         width = 12, height = 10) 
+##   format: file 
+##   iteration method: vector 
+##   error mode: stop 
+##   memory mode: persistent 
+##   storage mode: main 
+##   retrieval mode: main 
+##   deployment mode: worker 
+##   priority: 0 
+##   resources:
+##     list() 
+##   cue:
+##     mode: thorough
+##     command: TRUE
+##     depend: TRUE
+##     format: TRUE
+##     iteration: TRUE
+##     file: TRUE 
+##   packages:
+##     tidyverse
+##     haven
+##     Gmisc
+##     htmlTable
+##     flextable
+##     EValue
+##     lmtp
+##     mice
+##     upulR 
+##   library:
+##     NULL
+## [[7]]
+## <tar_stem> 
+##   name: sample_flowchart2 
+##   command:
+##     flow_chart_imp(df = descriptive_data, expo, out, base_cov, 
+##         l1_cov) 
+##   format: rds 
+##   iteration method: vector 
+##   error mode: stop 
+##   memory mode: persistent 
+##   storage mode: main 
+##   retrieval mode: main 
+##   deployment mode: worker 
+##   priority: 0 
+##   resources:
+##     list() 
+##   cue:
+##     mode: thorough
+##     command: TRUE
+##     depend: TRUE
+##     format: TRUE
+##     iteration: TRUE
+##     file: TRUE 
+##   packages:
+##     tidyverse
+##     haven
+##     Gmisc
+##     htmlTable
+##     flextable
+##     EValue
+##     lmtp
+##     mice
+##     upulR 
+##   library:
+##     NULL
+## [[8]]
+## <tar_stem> 
+##   name: tab1_data2 
+##   command:
+##     get_tab1_data(descriptive_data) 
+##   format: rds 
+##   iteration method: vector 
+##   error mode: stop 
+##   memory mode: persistent 
+##   storage mode: main 
+##   retrieval mode: main 
+##   deployment mode: worker 
+##   priority: 0 
+##   resources:
+##     list() 
+##   cue:
+##     mode: thorough
+##     command: TRUE
+##     depend: TRUE
+##     format: TRUE
+##     iteration: TRUE
+##     file: TRUE 
+##   packages:
+##     tidyverse
+##     haven
+##     Gmisc
+##     htmlTable
+##     flextable
+##     EValue
+##     lmtp
+##     mice
+##     upulR 
+##   library:
+##     NULL
+## [[9]]
+## <tar_stem> 
+##   name: table_1_2 
+##   command:
+##     upulR::create_table1(df = tab1_data2, headvar = out, 
+##         rowvars = c(expo[1], base_cov), headvar_na_level = "Censored", 
+##         file_name = "tables/table_1", header = "Social participation in 2016") 
+##   format: rds 
+##   iteration method: vector 
+##   error mode: stop 
+##   memory mode: persistent 
+##   storage mode: main 
+##   retrieval mode: main 
+##   deployment mode: worker 
+##   priority: 0 
+##   resources:
+##     list() 
+##   cue:
+##     mode: thorough
+##     command: TRUE
+##     depend: TRUE
+##     format: TRUE
+##     iteration: TRUE
+##     file: TRUE 
+##   packages:
+##     tidyverse
+##     haven
+##     Gmisc
+##     htmlTable
+##     flextable
+##     EValue
+##     lmtp
+##     mice
+##     upulR 
+##   library:
+##     NULL
+## [[10]]
+## <tar_stem> 
+##   name: dropouts_comparison2 
+##   command:
+##     get_dropout_comparison(df = tab1_data2, rowvars = c(expo[1], 
+##         base_cov)) 
+##   format: rds 
+##   iteration method: vector 
+##   error mode: stop 
+##   memory mode: persistent 
+##   storage mode: main 
+##   retrieval mode: main 
+##   deployment mode: worker 
+##   priority: 0 
+##   resources:
+##     list() 
+##   cue:
+##     mode: thorough
+##     command: TRUE
+##     depend: TRUE
+##     format: TRUE
+##     iteration: TRUE
+##     file: TRUE 
+##   packages:
+##     tidyverse
+##     haven
+##     Gmisc
+##     htmlTable
+##     flextable
+##     EValue
+##     lmtp
+##     mice
+##     upulR 
+##   library:
+##     NULL
+## [[11]]
+## <tar_stem> 
+##   name: tmle_data2 
+##   command:
+##     get_tmle_data(imp_data) 
+##   format: rds 
+##   iteration method: vector 
+##   error mode: stop 
+##   memory mode: persistent 
+##   storage mode: main 
+##   retrieval mode: main 
+##   deployment mode: worker 
+##   priority: 0 
+##   resources:
+##     list() 
+##   cue:
+##     mode: thorough
+##     command: TRUE
+##     depend: TRUE
+##     format: TRUE
+##     iteration: TRUE
+##     file: TRUE 
+##   packages:
+##     tidyverse
+##     haven
+##     Gmisc
+##     htmlTable
+##     flextable
+##     EValue
+##     lmtp
+##     mice
+##     upulR 
+##   library:
+##     NULL
+## [[12]]
+## <tar_stem> 
+##   name: a 
+##   command:
+##     expo 
+##   format: rds 
+##   iteration method: vector 
+##   error mode: stop 
+##   memory mode: persistent 
+##   storage mode: main 
+##   retrieval mode: main 
+##   deployment mode: worker 
+##   priority: 0 
+##   resources:
+##     list() 
+##   cue:
+##     mode: thorough
+##     command: TRUE
+##     depend: TRUE
+##     format: TRUE
+##     iteration: TRUE
+##     file: TRUE 
+##   packages:
+##     tidyverse
+##     haven
+##     Gmisc
+##     htmlTable
+##     flextable
+##     EValue
+##     lmtp
+##     mice
+##     upulR 
+##   library:
+##     NULL
+## [[13]]
+## <tar_stem> 
+##   name: y 
+##   command:
+##     out 
+##   format: rds 
+##   iteration method: vector 
+##   error mode: stop 
+##   memory mode: persistent 
+##   storage mode: main 
+##   retrieval mode: main 
+##   deployment mode: worker 
+##   priority: 0 
+##   resources:
+##     list() 
+##   cue:
+##     mode: thorough
+##     command: TRUE
+##     depend: TRUE
+##     format: TRUE
+##     iteration: TRUE
+##     file: TRUE 
+##   packages:
+##     tidyverse
+##     haven
+##     Gmisc
+##     htmlTable
+##     flextable
+##     EValue
+##     lmtp
+##     mice
+##     upulR 
+##   library:
+##     NULL
+## [[14]]
+## <tar_stem> 
+##   name: w 
+##   command:
+##     colnames(tmle_data2 %>% select(Age, Sex, contains("Y0"))) 
+##   format: rds 
+##   iteration method: vector 
+##   error mode: stop 
+##   memory mode: persistent 
+##   storage mode: main 
+##   retrieval mode: main 
+##   deployment mode: worker 
+##   priority: 0 
+##   resources:
+##     list() 
+##   cue:
+##     mode: thorough
+##     command: TRUE
+##     depend: TRUE
+##     format: TRUE
+##     iteration: TRUE
+##     file: TRUE 
+##   packages:
+##     tidyverse
+##     haven
+##     Gmisc
+##     htmlTable
+##     flextable
+##     EValue
+##     lmtp
+##     mice
+##     upulR 
+##   library:
+##     NULL
+## [[15]]
+## <tar_stem> 
+##   name: tv 
+##   command:
+##     list(colnames(tmle_data2 %>% select(contains("L0"))), 
+##         colnames(tmle_data2 %>% select(contains("L1")))) 
+##   format: rds 
+##   iteration method: vector 
+##   error mode: stop 
+##   memory mode: persistent 
+##   storage mode: main 
+##   retrieval mode: main 
+##   deployment mode: worker 
+##   priority: 0 
+##   resources:
+##     list() 
+##   cue:
+##     mode: thorough
+##     command: TRUE
+##     depend: TRUE
+##     format: TRUE
+##     iteration: TRUE
+##     file: TRUE 
+##   packages:
+##     tidyverse
+##     haven
+##     Gmisc
+##     htmlTable
+##     flextable
+##     EValue
+##     lmtp
+##     mice
+##     upulR 
+##   library:
+##     NULL
+## [[16]]
+## <tar_stem> 
+##   name: cens 
+##   command:
+##     c("c1", "c2") 
+##   format: rds 
+##   iteration method: vector 
+##   error mode: stop 
+##   memory mode: persistent 
+##   storage mode: main 
+##   retrieval mode: main 
+##   deployment mode: worker 
+##   priority: 0 
+##   resources:
+##     list() 
+##   cue:
+##     mode: thorough
+##     command: TRUE
+##     depend: TRUE
+##     format: TRUE
+##     iteration: TRUE
+##     file: TRUE 
+##   packages:
+##     tidyverse
+##     haven
+##     Gmisc
+##     htmlTable
+##     flextable
+##     EValue
+##     lmtp
+##     mice
+##     upulR 
+##   library:
+##     NULL
+## [[17]]
+## <tar_stem> 
+##   name: sl_lib 
+##   command:
+##     c("SL.glm", "SL.xgboost", "SL.nnet") 
+##   format: rds 
+##   iteration method: vector 
+##   error mode: stop 
+##   memory mode: persistent 
+##   storage mode: main 
+##   retrieval mode: main 
+##   deployment mode: worker 
+##   priority: 0 
+##   resources:
+##     list() 
+##   cue:
+##     mode: thorough
+##     command: TRUE
+##     depend: TRUE
+##     format: TRUE
+##     iteration: TRUE
+##     file: TRUE 
+##   packages:
+##     tidyverse
+##     haven
+##     Gmisc
+##     htmlTable
+##     flextable
+##     EValue
+##     lmtp
+##     mice
+##     upulR 
+##   library:
+##     NULL
+## [[18]]
+## <tar_stem> 
+##   name: params 
+##   command:
+##     list(trt = a, outcome = y, baseline = w, time_vary = tv, 
+##         outcome_type = "binomial", cens = cens, k = 0) 
+##   format: rds 
+##   iteration method: vector 
+##   error mode: stop 
+##   memory mode: persistent 
+##   storage mode: main 
+##   retrieval mode: main 
+##   deployment mode: worker 
+##   priority: 0 
+##   resources:
+##     list() 
+##   cue:
+##     mode: thorough
+##     command: TRUE
+##     depend: TRUE
+##     format: TRUE
+##     iteration: TRUE
+##     file: TRUE 
+##   packages:
+##     tidyverse
+##     haven
+##     Gmisc
+##     htmlTable
+##     flextable
+##     EValue
+##     lmtp
+##     mice
+##     upulR 
+##   library:
+##     NULL
+## [[19]]
+## <tar_stem> 
+##   name: tmle_res_m1_noSL 
+##   command:
+##     lapply(paste0("d", 0:4), function(x) do.call(run_lmtp, 
+##         c(params, list(data = tmle_data2 %>% filter(.imp == 1), shift = eval(as.symbol(x)))))) 
+##   format: rds 
+##   iteration method: vector 
+##   error mode: stop 
+##   memory mode: persistent 
+##   storage mode: main 
+##   retrieval mode: main 
+##   deployment mode: worker 
+##   priority: 0 
+##   resources:
+##     list() 
+##   cue:
+##     mode: thorough
+##     command: TRUE
+##     depend: TRUE
+##     format: TRUE
+##     iteration: TRUE
+##     file: TRUE 
+##   packages:
+##     tidyverse
+##     haven
+##     Gmisc
+##     htmlTable
+##     flextable
+##     EValue
+##     lmtp
+##     mice
+##     upulR 
+##   library:
+##     NULL
+## [[20]]
+## <tar_stem> 
+##   name: tmle_res_m1_SL 
+##   command:
+##     lapply(paste0("d", 0:4), function(x) do.call(run_lmtp, 
+##         c(params, list(data = tmle_data2 %>% filter(.imp == 1), learners_outcome = sl_lib, 
+##             learners_trt = sl_lib, shift = eval(as.symbol(x)))))) 
+##   format: rds 
+##   iteration method: vector 
+##   error mode: stop 
+##   memory mode: persistent 
+##   storage mode: main 
+##   retrieval mode: main 
+##   deployment mode: worker 
+##   priority: 0 
+##   resources:
+##     list() 
+##   cue:
+##     mode: thorough
+##     command: TRUE
+##     depend: TRUE
+##     format: TRUE
+##     iteration: TRUE
+##     file: TRUE 
+##   packages:
+##     tidyverse
+##     haven
+##     Gmisc
+##     htmlTable
+##     flextable
+##     EValue
+##     lmtp
+##     mice
+##     upulR 
+##   library:
+##     NULL
+## [[21]]
+## <tar_stem> 
+##   name: tmle_res_m2_noSL 
+##   command:
+##     lapply(paste0("d", 0:4), function(x) do.call(run_lmtp, 
+##         c(params, list(data = tmle_data2 %>% filter(.imp == 2), shift = eval(as.symbol(x)))))) 
+##   format: rds 
+##   iteration method: vector 
+##   error mode: stop 
+##   memory mode: persistent 
+##   storage mode: main 
+##   retrieval mode: main 
+##   deployment mode: worker 
+##   priority: 0 
+##   resources:
+##     list() 
+##   cue:
+##     mode: thorough
+##     command: TRUE
+##     depend: TRUE
+##     format: TRUE
+##     iteration: TRUE
+##     file: TRUE 
+##   packages:
+##     tidyverse
+##     haven
+##     Gmisc
+##     htmlTable
+##     flextable
+##     EValue
+##     lmtp
+##     mice
+##     upulR 
+##   library:
+##     NULL
+## [[22]]
+## <tar_stem> 
+##   name: tmle_res_m2_SL 
+##   command:
+##     lapply(paste0("d", 0:4), function(x) do.call(run_lmtp, 
+##         c(params, list(data = tmle_data2 %>% filter(.imp == 2), learners_outcome = sl_lib, 
+##             learners_trt = sl_lib, shift = eval(as.symbol(x)))))) 
+##   format: rds 
+##   iteration method: vector 
+##   error mode: stop 
+##   memory mode: persistent 
+##   storage mode: main 
+##   retrieval mode: main 
+##   deployment mode: worker 
+##   priority: 0 
+##   resources:
+##     list() 
+##   cue:
+##     mode: thorough
+##     command: TRUE
+##     depend: TRUE
+##     format: TRUE
+##     iteration: TRUE
+##     file: TRUE 
+##   packages:
+##     tidyverse
+##     haven
+##     Gmisc
+##     htmlTable
+##     flextable
+##     EValue
+##     lmtp
+##     mice
+##     upulR 
+##   library:
+##     NULL
+## [[23]]
+## <tar_stem> 
+##   name: tmle_res_m3_noSL 
+##   command:
+##     lapply(paste0("d", 0:4), function(x) do.call(run_lmtp, 
+##         c(params, list(data = tmle_data2 %>% filter(.imp == 3), shift = eval(as.symbol(x)))))) 
+##   format: rds 
+##   iteration method: vector 
+##   error mode: stop 
+##   memory mode: persistent 
+##   storage mode: main 
+##   retrieval mode: main 
+##   deployment mode: worker 
+##   priority: 0 
+##   resources:
+##     list() 
+##   cue:
+##     mode: thorough
+##     command: TRUE
+##     depend: TRUE
+##     format: TRUE
+##     iteration: TRUE
+##     file: TRUE 
+##   packages:
+##     tidyverse
+##     haven
+##     Gmisc
+##     htmlTable
+##     flextable
+##     EValue
+##     lmtp
+##     mice
+##     upulR 
+##   library:
+##     NULL
+## [[24]]
+## <tar_stem> 
+##   name: tmle_res_m3_SL 
+##   command:
+##     lapply(paste0("d", 0:4), function(x) do.call(run_lmtp, 
+##         c(params, list(data = tmle_data2 %>% filter(.imp == 3), learners_outcome = sl_lib, 
+##             learners_trt = sl_lib, shift = eval(as.symbol(x)))))) 
+##   format: rds 
+##   iteration method: vector 
+##   error mode: stop 
+##   memory mode: persistent 
+##   storage mode: main 
+##   retrieval mode: main 
+##   deployment mode: worker 
+##   priority: 0 
+##   resources:
+##     list() 
+##   cue:
+##     mode: thorough
+##     command: TRUE
+##     depend: TRUE
+##     format: TRUE
+##     iteration: TRUE
+##     file: TRUE 
+##   packages:
+##     tidyverse
+##     haven
+##     Gmisc
+##     htmlTable
+##     flextable
+##     EValue
+##     lmtp
+##     mice
+##     upulR 
+##   library:
+##     NULL
+## [[25]]
+## <tar_stem> 
+##   name: tmle_res_m4_noSL 
+##   command:
+##     lapply(paste0("d", 0:4), function(x) do.call(run_lmtp, 
+##         c(params, list(data = tmle_data2 %>% filter(.imp == 4), shift = eval(as.symbol(x)))))) 
+##   format: rds 
+##   iteration method: vector 
+##   error mode: stop 
+##   memory mode: persistent 
+##   storage mode: main 
+##   retrieval mode: main 
+##   deployment mode: worker 
+##   priority: 0 
+##   resources:
+##     list() 
+##   cue:
+##     mode: thorough
+##     command: TRUE
+##     depend: TRUE
+##     format: TRUE
+##     iteration: TRUE
+##     file: TRUE 
+##   packages:
+##     tidyverse
+##     haven
+##     Gmisc
+##     htmlTable
+##     flextable
+##     EValue
+##     lmtp
+##     mice
+##     upulR 
+##   library:
+##     NULL
+## [[26]]
+## <tar_stem> 
+##   name: tmle_res_m4_SL 
+##   command:
+##     lapply(paste0("d", 0:4), function(x) do.call(run_lmtp, 
+##         c(params, list(data = tmle_data2 %>% filter(.imp == 4), learners_outcome = sl_lib, 
+##             learners_trt = sl_lib, shift = eval(as.symbol(x)))))) 
+##   format: rds 
+##   iteration method: vector 
+##   error mode: stop 
+##   memory mode: persistent 
+##   storage mode: main 
+##   retrieval mode: main 
+##   deployment mode: worker 
+##   priority: 0 
+##   resources:
+##     list() 
+##   cue:
+##     mode: thorough
+##     command: TRUE
+##     depend: TRUE
+##     format: TRUE
+##     iteration: TRUE
+##     file: TRUE 
+##   packages:
+##     tidyverse
+##     haven
+##     Gmisc
+##     htmlTable
+##     flextable
+##     EValue
+##     lmtp
+##     mice
+##     upulR 
+##   library:
+##     NULL
+## [[27]]
+## <tar_stem> 
+##   name: tmle_res_m5_noSL 
+##   command:
+##     lapply(paste0("d", 0:4), function(x) do.call(run_lmtp, 
+##         c(params, list(data = tmle_data2 %>% filter(.imp == 5), shift = eval(as.symbol(x)))))) 
+##   format: rds 
+##   iteration method: vector 
+##   error mode: stop 
+##   memory mode: persistent 
+##   storage mode: main 
+##   retrieval mode: main 
+##   deployment mode: worker 
+##   priority: 0 
+##   resources:
+##     list() 
+##   cue:
+##     mode: thorough
+##     command: TRUE
+##     depend: TRUE
+##     format: TRUE
+##     iteration: TRUE
+##     file: TRUE 
+##   packages:
+##     tidyverse
+##     haven
+##     Gmisc
+##     htmlTable
+##     flextable
+##     EValue
+##     lmtp
+##     mice
+##     upulR 
+##   library:
+##     NULL
+## [[28]]
+## <tar_stem> 
+##   name: tmle_res_m5_SL 
+##   command:
+##     lapply(paste0("d", 0:4), function(x) do.call(run_lmtp, 
+##         c(params, list(data = tmle_data2 %>% filter(.imp == 5), learners_outcome = sl_lib, 
+##             learners_trt = sl_lib, shift = eval(as.symbol(x)))))) 
+##   format: rds 
+##   iteration method: vector 
+##   error mode: stop 
+##   memory mode: persistent 
+##   storage mode: main 
+##   retrieval mode: main 
+##   deployment mode: worker 
+##   priority: 0 
+##   resources:
+##     list() 
+##   cue:
+##     mode: thorough
+##     command: TRUE
+##     depend: TRUE
+##     format: TRUE
+##     iteration: TRUE
+##     file: TRUE 
+##   packages:
+##     tidyverse
+##     haven
+##     Gmisc
+##     htmlTable
+##     flextable
+##     EValue
+##     lmtp
+##     mice
+##     upulR 
+##   library:
+##     NULL
+## [[29]]
+## <tar_stem> 
+##   name: res_d0_sl 
+##   command:
+##     get_pooled_results(tmle_res_m1_SL, tmle_res_m2_SL, 
+##         tmle_res_m3_SL, tmle_res_m4_SL, tmle_res_m5_SL, est = "sl", 
+##         ref_d = 0L) 
+##   format: rds 
+##   iteration method: vector 
+##   error mode: stop 
+##   memory mode: persistent 
+##   storage mode: main 
+##   retrieval mode: main 
+##   deployment mode: worker 
+##   priority: 0 
+##   resources:
+##     list() 
+##   cue:
+##     mode: thorough
+##     command: TRUE
+##     depend: TRUE
+##     format: TRUE
+##     iteration: TRUE
+##     file: TRUE 
+##   packages:
+##     tidyverse
+##     haven
+##     Gmisc
+##     htmlTable
+##     flextable
+##     EValue
+##     lmtp
+##     mice
+##     upulR 
+##   library:
+##     NULL
+## [[30]]
+## <tar_stem> 
+##   name: res_d1_sl 
+##   command:
+##     get_pooled_results(tmle_res_m1_SL, tmle_res_m2_SL, 
+##         tmle_res_m3_SL, tmle_res_m4_SL, tmle_res_m5_SL, est = "sl", 
+##         ref_d = 1L) 
+##   format: rds 
+##   iteration method: vector 
+##   error mode: stop 
+##   memory mode: persistent 
+##   storage mode: main 
+##   retrieval mode: main 
+##   deployment mode: worker 
+##   priority: 0 
+##   resources:
+##     list() 
+##   cue:
+##     mode: thorough
+##     command: TRUE
+##     depend: TRUE
+##     format: TRUE
+##     iteration: TRUE
+##     file: TRUE 
+##   packages:
+##     tidyverse
+##     haven
+##     Gmisc
+##     htmlTable
+##     flextable
+##     EValue
+##     lmtp
+##     mice
+##     upulR 
+##   library:
+##     NULL
+## [[31]]
+## <tar_stem> 
+##   name: res_d0_glm 
+##   command:
+##     get_pooled_results(tmle_res_m1_noSL, tmle_res_m2_noSL, 
+##         tmle_res_m3_noSL, tmle_res_m4_noSL, tmle_res_m5_noSL, est = "glm", 
+##         ref_d = 0L) 
+##   format: rds 
+##   iteration method: vector 
+##   error mode: stop 
+##   memory mode: persistent 
+##   storage mode: main 
+##   retrieval mode: main 
+##   deployment mode: worker 
+##   priority: 0 
+##   resources:
+##     list() 
+##   cue:
+##     mode: thorough
+##     command: TRUE
+##     depend: TRUE
+##     format: TRUE
+##     iteration: TRUE
+##     file: TRUE 
+##   packages:
+##     tidyverse
+##     haven
+##     Gmisc
+##     htmlTable
+##     flextable
+##     EValue
+##     lmtp
+##     mice
+##     upulR 
+##   library:
+##     NULL
+## [[32]]
+## <tar_stem> 
+##   name: res_d1_glm 
+##   command:
+##     get_pooled_results(tmle_res_m1_noSL, tmle_res_m2_noSL, 
+##         tmle_res_m3_noSL, tmle_res_m4_noSL, tmle_res_m5_noSL, est = "glm", 
+##         ref_d = 1L) 
+##   format: rds 
+##   iteration method: vector 
+##   error mode: stop 
+##   memory mode: persistent 
+##   storage mode: main 
+##   retrieval mode: main 
+##   deployment mode: worker 
+##   priority: 0 
+##   resources:
+##     list() 
+##   cue:
+##     mode: thorough
+##     command: TRUE
+##     depend: TRUE
+##     format: TRUE
+##     iteration: TRUE
+##     file: TRUE 
+##   packages:
+##     tidyverse
+##     haven
+##     Gmisc
+##     htmlTable
+##     flextable
+##     EValue
+##     lmtp
+##     mice
+##     upulR 
+##   library:
+##     NULL
+## [[33]]
+## <tar_stem> 
+##   name: pooled_estimates 
+##   command:
+##     rbind(res_d0_sl, res_d1_sl, res_d0_glm, res_d1_glm) 
+##   format: rds 
+##   iteration method: vector 
+##   error mode: stop 
+##   memory mode: persistent 
+##   storage mode: main 
+##   retrieval mode: main 
+##   deployment mode: worker 
+##   priority: 0 
+##   resources:
+##     list() 
+##   cue:
+##     mode: thorough
+##     command: TRUE
+##     depend: TRUE
+##     format: TRUE
+##     iteration: TRUE
+##     file: TRUE 
+##   packages:
+##     tidyverse
+##     haven
+##     Gmisc
+##     htmlTable
+##     flextable
+##     EValue
+##     lmtp
+##     mice
+##     upulR 
+##   library:
+##     NULL
+## [[34]]
+## <tar_stem> 
+##   name: table_2 
+##   command:
+##     get_table2(pooled_estimates) 
+##   format: file 
+##   iteration method: vector 
+##   error mode: stop 
+##   memory mode: persistent 
+##   storage mode: main 
+##   retrieval mode: main 
+##   deployment mode: worker 
+##   priority: 0 
+##   resources:
+##     list() 
+##   cue:
+##     mode: thorough
+##     command: TRUE
+##     depend: TRUE
+##     format: TRUE
+##     iteration: TRUE
+##     file: TRUE 
+##   packages:
+##     tidyverse
+##     haven
+##     Gmisc
+##     htmlTable
+##     flextable
+##     EValue
+##     lmtp
+##     mice
+##     upulR 
+##   library:
+##     NULL
+## [[35]]
+## <tar_stem> 
+##   name: figure_2 
+##   command:
+##     get_figure2(pooled_estimates) 
+##   format: file 
+##   iteration method: vector 
+##   error mode: stop 
+##   memory mode: persistent 
+##   storage mode: main 
+##   retrieval mode: main 
+##   deployment mode: worker 
+##   priority: 0 
+##   resources:
+##     list() 
+##   cue:
+##     mode: thorough
+##     command: TRUE
+##     depend: TRUE
+##     format: TRUE
+##     iteration: TRUE
+##     file: TRUE 
+##   packages:
+##     tidyverse
+##     haven
+##     Gmisc
+##     htmlTable
+##     flextable
+##     EValue
+##     lmtp
+##     mice
+##     upulR 
+##   library:
+##     NULL
+\end{verbatim}
+\end{kframe}
+\end{knitrout}
+
+The R session information (including the OS info, R version and all
+packages used):
+
+\begin{knitrout}
+\definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}\begin{kframe}
+\begin{alltt}
+\hlkwd{sessionInfo}\hlstd{()}
+\end{alltt}
+\begin{verbatim}
+## R version 4.1.2 (2021-11-01)
+## Platform: x86_64-pc-linux-gnu (64-bit)
+## Running under: Ubuntu 21.10
+## 
+## Matrix products: default
+## BLAS:   /usr/lib/x86_64-linux-gnu/blas/libblas.so.3.9.0
+## LAPACK: /usr/lib/x86_64-linux-gnu/lapack/liblapack.so.3.9.0
+## 
+## locale:
+##  [1] LC_CTYPE=en_US.UTF-8       LC_NUMERIC=C               LC_TIME=en_US.UTF-8       
+##  [4] LC_COLLATE=en_US.UTF-8     LC_MONETARY=ja_JP.UTF-8    LC_MESSAGES=en_US.UTF-8   
+##  [7] LC_PAPER=ja_JP.UTF-8       LC_NAME=C                  LC_ADDRESS=C              
+## [10] LC_TELEPHONE=C             LC_MEASUREMENT=en_US.UTF-8 LC_IDENTIFICATION=C       
+## 
+## attached base packages:
+## [1] stats     graphics  grDevices utils     datasets  methods   base     
+## 
+## other attached packages:
+## [1] future.callr_0.7.0 future_1.24.0      upulR_0.1.0        stringr_1.4.0     
+## [5] targets_0.10.0     devtools_2.4.3     usethis_2.1.5     
+## 
+## loaded via a namespace (and not attached):
+##   [1] colorspace_2.0-2    ellipsis_0.3.2      visdat_0.5.3        lmtp_1.0.0         
+##   [5] rprojroot_2.0.2     ggstance_0.3.5      flextable_0.6.10    htmlTable_2.4.0    
+##   [9] base64enc_0.1-3     fs_1.5.2            rstudioapi_0.13     mice_3.14.0        
+##  [13] listenv_0.8.0       remotes_2.4.2       fansi_1.0.2         lubridate_1.8.0    
+##  [17] xml2_1.3.3          codetools_0.2-18    splines_4.1.2       cachem_1.0.6       
+##  [21] knitr_1.37          pkgload_1.2.4       Formula_1.2-4       naniar_0.6.1       
+##  [25] broom_0.7.11        cluster_2.1.2       png_0.1-7           compiler_4.1.2     
+##  [29] backports_1.4.1     assertthat_0.2.1    Matrix_1.4-0        fastmap_1.1.0      
+##  [33] survey_4.1-1        cli_3.2.0           htmltools_0.5.2     prettyunits_1.1.1  
+##  [37] tools_4.1.2         igraph_1.2.11       gtable_0.3.0        glue_1.6.2         
+##  [41] dplyr_1.0.7         tinytex_0.36        Rcpp_1.0.8          SuperLearner_2.0-28
+##  [45] vctrs_0.3.8         progressr_0.10.0    iterators_1.0.13    xfun_0.30          
+##  [49] globals_0.14.0      ps_1.6.0            brio_1.1.3          testthat_3.1.2     
+##  [53] lifecycle_1.0.1     XML_3.99-0.9        scales_1.1.1        parallel_4.1.2     
+##  [57] RColorBrewer_1.1-2  yaml_2.3.5          memoise_2.0.1       gridExtra_2.3      
+##  [61] ggplot2_3.3.5       gdtools_0.2.3       rpart_4.1-15        glueformula_0.1.0  
+##  [65] gam_1.20            latticeExtra_0.6-29 stringi_1.7.6       highr_0.9          
+##  [69] desc_1.4.1          fastDummies_1.6.3   foreach_1.5.1       checkmate_2.0.0    
+##  [73] pkgbuild_1.3.1      zip_2.2.0           rlang_1.0.2         pkgconfig_2.0.3    
+##  [77] systemfonts_1.0.3   evaluate_0.15       lattice_0.20-45     purrr_0.3.4        
+##  [81] htmlwidgets_1.5.4   processx_3.5.2      tidyselect_1.1.1    parallelly_1.30.0  
+##  [85] magrittr_2.0.2      R6_2.5.1            generics_0.1.1      nnls_1.4           
+##  [89] Hmisc_4.6-0         base64url_1.4       DBI_1.1.2           pillar_1.7.0       
+##  [93] foreign_0.8-82      withr_2.5.0         Gmisc_3.0.0         forestplot_2.0.1   
+##  [97] survival_3.2-13     abind_1.4-5         nnet_7.3-17         tibble_3.1.6       
+## [101] crayon_1.5.0        uuid_1.0-3          utf8_1.2.2          rmarkdown_2.11     
+## [105] officer_0.4.1       jpeg_0.1-9          arsenal_3.6.3       grid_4.1.2         
+## [109] data.table_1.14.2   callr_3.7.0         forcats_0.5.1       digest_0.6.29      
+## [113] tidyr_1.1.4         munsell_0.5.0       mitools_2.4         sessioninfo_1.2.2
+\end{verbatim}
+\begin{alltt}
+\hlkwd{Sys.time}\hlstd{()}
+\end{alltt}
+\begin{verbatim}
+## [1] "2022-04-02 01:17:59 JST"
+\end{verbatim}
+\end{kframe}
+\end{knitrout}
+
+
+\end{document}
