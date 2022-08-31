@@ -344,8 +344,10 @@ get_table1 <- function(df,y_var,file_name){
                                "0_inc",
                                "sex",
                                "A0_teeth",
-                               "w_",
-                               "L0_"))) %>% colnames()
+                               "educ",
+                               "0_srh",
+                               "0_mari",
+                               "w_y0"))) %>% colnames()
   y <- y_var
 
   form <- as.formula(paste(y, paste(x, collapse="+"), sep="~"))
@@ -523,7 +525,7 @@ get_table2_data <- function(df){
 
   v1<- df$contrast
 
-  v2<- paste("Obeserved", "vs", "Scenario", 1:8)
+  v2<- paste("Observed", "vs", "Scenario", 1:8)
 
   v3<- set_names(x = v2,nm = v1)
 
