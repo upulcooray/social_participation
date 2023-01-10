@@ -11,92 +11,108 @@ is_cat <- function(x) {
 
 # Prep data-------
 get_descriptive_data <- function(df){
-# df1<-
-df %>%
-  mutate(across(.fns = ~ifelse(. %in% c(-9999), NA, .))) %>%
-  # apply(2, range, na.rm= T)
-  dplyr::mutate(A0_teeth = teeth10clean(teeth4_10),
-                A1_teeth = teeth13_16(teeth4_13),
-                y0_any = pmin(cmnt6sg10,
-                              cmnt6hb10,
-                              cmnt6re10,
-                              cmnt6sp10,
-                              cmnt6vl10,
-                              na.rm = T),
-                w_y0 = dplyr::if_else(y0_any<= 4,1,0),
-                Y1_any = pmin(cmnt6sg13, cmnt6hb13,
-                              cmnt6re13,cmnt6sp13,cmnt6vl13,
-                              na.rm = T),
-                Y2_any = pmin(cmnt6sg16, cmnt6hb16,
-                              cmnt6re16,cmnt6sp16,cmnt6vl16,
-                              na.rm = T),
-                Y2 = dplyr::if_else(Y2_any<= 4,1,0),
-                mebr2nb10 = dplyr::if_else(mebr2nb10==0,1,mebr2nb10),
-                L0_inc = eqincome(hhine_10)/sqrt(mebr2nb10),
-                L1_inc = eqincome(hhine_13)/sqrt(mebr2nb13),
-                # L0_den = dplyr::if_else(dent4_10==1,0,1),
-                # L1_den = dplyr::if_else(dent4_13==1,0,1),
-                L0_mari = dplyr::if_else(mari5st10>1,0, mari5st10),
-                L1_mari = dplyr::if_else(mari5st13>1,0, mari5st13),
-                L0_srh = srh_4_10,
-                L1_srh = srh_4_13,
-                C1 = part13,
-                C2 = part16,
-                C1 = dplyr::case_when(C1==6 & C2==5~ 5,
-                                      C1==6 & (C2==4 | C2==3) ~ 4,
-                                      TRUE ~ C1),
-                C2 = dplyr::case_when(C1==5 ~5,
-                                      C1==3 & C2==1 ~ 3,
-                                      C1==4 & C2==1 ~ 4,
-                                      C1==3 & C2==6 ~ 3,
-                                      C1==6 & C2==1 ~ 6,
-                                      TRUE~ C2),
-                c1 = dplyr::if_else(C1==1,1,0),
-                c2 = dplyr::if_else(C2==1,1,0),
-                w_age = age_ysl10,
-                w_sex = sex_2_10,
-                w_educ= ifelse(educ5_10==5,NA,educ5_10)) %>%
-    select(starts_with(c("w_", "L0_", "A0_","c1","A1_","L1_","c2")), Y2) %>%
+
+  df %>%
+    filter(adl_3_10==1) %>%  # Functionally independent at the baseline
+    mutate(across(.fns = ~ifelse(. %in% c(-9999), NA, .)),
+           across(.cols = contains("iadl2"), ~ifelse(.x==2,0,.x), .names = "l_{.col}")) %>%
+    dplyr::mutate(
+      A0_teeth = teeth10clean(teeth4_10),
+      A1_teeth = teeth13_16(teeth4_13),
+      L0_iadl = rowSums(dplyr::select(.,l_iadl2bt10:l_iadl2ty10)),
+      L1_iadl = rowSums(dplyr::select(.,l_iadl2bt13:l_iadl2ty13)),
+      y0_any = pmin(cmnt6sg10,
+                    cmnt6hb10,
+                    cmnt6re10,
+                    cmnt6sp10,
+                    cmnt6vl10,
+                    na.rm = T),
+      w_y0 = dplyr::if_else(y0_any<= 4,1,0),
+      Y1_any = pmin(cmnt6sg13, cmnt6hb13,
+                    cmnt6re13,cmnt6sp13,cmnt6vl13,
+                    na.rm = T),
+      Y2_any = pmin(cmnt6sg16, cmnt6hb16,
+                    cmnt6re16,cmnt6sp16,cmnt6vl16,
+                    na.rm = T),
+      Y2 = dplyr::if_else(Y2_any<= 4,1,0),
+      Y2_week = dplyr::if_else(Y2_any<= 3,1,0),
+      mebr2nb10 = dplyr::if_else(mebr2nb10==0,1,mebr2nb10),
+      L0_inc = eqincome(hhine_10)/sqrt(mebr2nb10),
+      L1_inc = eqincome(hhine_13)/sqrt(mebr2nb13),
+      L0_mari = dplyr::if_else(mari5st10>1,0, mari5st10),
+      L1_mari = dplyr::if_else(mari5st13>1,0, mari5st13),
+      L0_srh = srh_4_10,
+      L1_srh = srh_4_13,
+      L0_vision= dgns2vi10,
+      L1_vision= dgns2vi13,
+      L0_hear= dgns2he10,
+      L1_hear= dgns2he13,
+      L0_cancer= dgns2ca10,
+      L1_cancer= dgns2ca13,
+      L0_heart= dgns2hd10,
+      L1_heart= dgns2hd13,
+      L0_stroke= dgns2st10,
+      L1_heart= dgns2st13,
+      across(c("mebr2nb10","mebr2nb13"),
+             ~case_when(.x<2~1,
+                        .x>=6~6,
+                        T~ .x), .names = "L{c(0:1)}_membr"),
+      C1 = part13,
+      C2 = part16,
+      C1 = dplyr::case_when(C1==6 & C2==5~ 5,
+                            C1==6 & (C2==4 | C2==3) ~ 4,
+                            TRUE ~ C1),
+      C2 = dplyr::case_when(C1==5 ~5,
+                            C1==3 & C2==1 ~ 3,
+                            C1==4 & C2==1 ~ 4,
+                            C1==3 & C2==6 ~ 3,
+                            C1==6 & C2==1 ~ 6,
+                            TRUE~ C2),
+      c1 = dplyr::if_else(C1==1,1,0),
+      c2 = dplyr::if_else(C2==1,1,0),
+      w_age = age_ysl10,
+      w_sex = sex_2_10,
+      w_educ= ifelse(educ5_10==5,NA,educ5_10),
+      w_vision= dgns2vi10,
+      w_hear= dgns2vi10) %>%
+    select(starts_with(c("w_", "L0_", "A0_","c1","A1_","L1_","c2","Y2_")), Y2) %>%
     mutate(c2= ifelse(c1==0,0,c2)) %>%
     mutate_at(vars(contains(c("L1","A1_","Y2"))),
               ~ifelse(c1==0 , NA,.)) %>%
     mutate(Y2= ifelse(c2==0 ,NA,Y2)) %>%
-    mutate(w_sex= factor(w_sex- 1, levels = c(0,1), labels = c("Male","Female")),  # make sex 0=male 1=female
-           w_educ= factor(w_educ,
-                          levels = 1:4,
-                          labels = c("6yrs",
-                                     "6_9yrs",
-                                     "10_12yrs",
-                                     "12yrs" ), ordered = T),
-           # w_y0= factor(w_y0, levels = 1:6, ordered = T),
-           ) %>%
-    mutate(across(c(L0_srh,L1_srh),
-                  factor,
-                  levels=1:4,
-                  labels= c("Very good","Good","Fair","Poor"),
-                  ordered=T)) %>%
-    mutate(across(c(A0_teeth,A1_teeth),
-                  factor,
-                  levels=c(1:4),
-                  labels= c( "Edentate",
-                             "1-9 teeth",
-                             "10-19 teeth",
-                             ">= 20 teeth"
-                            ),
-                  ordered=T)) %>%
+    mutate(
+      w_sex= factor(w_sex- 1, levels = c(0,1), labels = c("Male","Female")),  # make sex 0=male 1=female
+      w_educ= factor(w_educ,
+                     levels = 1:4,
+                     labels = c("6yrs",
+                                "6_9yrs",
+                                "10_12yrs",
+                                "12yrs" ), ordered = T),
+      across(c(L0_srh,L1_srh),
+             factor,
+             levels=1:4,
+             labels= c("Very good","Good","Fair","Poor"),
+             ordered=T),
+      across(c(A0_teeth,A1_teeth),
+             factor,
+             levels=c(1:4),
+             labels= c( "Edentate",
+                        "1-9 teeth",
+                        "10-19 teeth",
+                        ">= 20 teeth"),
+             ordered=T),
 
-
-
-    mutate(across(contains("mari"),
-                  factor,
-                  levels=c(1,0),
-                  labels= c("Married",
-                            "Widowed,divorced, or unmarried"))) %>%
-    mutate(across(c(w_y0,Y2),
-                  factor,
-                  levels = c(1,0),
-                  labels = c("Yes","No")))
-
+      across(contains("mari"),
+             factor,
+             levels=c(1,0),
+             labels= c("Married",
+                       "Widowed,divorced, or unmarried")),
+      across(c(w_y0,
+               Y2,
+               ends_with(c("vision","hear","cancer", "heart", "stroke"))),
+             factor,
+             levels = c(1,0),
+             labels = c("Yes","No")))
 }
 
 # Impute missing----------
@@ -105,8 +121,9 @@ get_mice_data <- function(df, ...){
   #impute all missing values (not missing due to censoring)----
   to_imp<- df %>%
     mutate_at(vars(contains(c("L1","A1_"))),
-                    ~ifelse(c1==0 , -99,.)) %>%
+              ~ifelse(c1==0 , -99,.)) %>%
     mutate(Y2= ifelse(c2==0 ,-999,Y2)) %>%
+    mutate(Y2_week= ifelse(c2==0 ,-999,Y2_week)) %>%
     mice::make.where("missing")
 
   # Use only base line vars for mice
@@ -115,7 +132,7 @@ get_mice_data <- function(df, ...){
 
   # variables that get imputed only (not contributing to mice)
   imp_only_vars<- df %>%
-    select(starts_with(c("L1_","A1_")), Y2) %>% colnames()
+    select(starts_with(c("L1_","A1_")), Y2, Y2_week) %>% colnames()
 
   # get predictor matrix----
 
@@ -168,6 +185,18 @@ get_labelled_data <- function(df){
                     L1_srh= "Self-rated health (2013)",
                     L0_mari= "Marital status",
                     L1_mari= "Marital status (2013)",
+                    L0_vision= "Eye impairment",
+                    L1_vision= "Eye impairment (2013)",
+                    L0_hear= "Ear impairment",
+                    L1_hear= "Ear impairment (2013)",
+                    L0_cancer="Cancer",
+                    L1_cancer="Cancer (2013)",
+                    L0_heart= "Heart disease",
+                    L1_heart= "Heart disease (2013)",
+                    L0_stroke="Stroke",
+                    L1_stroke="Stroke (2013)",
+                    L0_membr= "Number of household members",
+                    L1_membr= "Number of household members (2013)",
                     Y0_any= "Social participation 2010",
                     A0_teeth= "Number of teeth (2010)",
                     A1_teeth= "Number of teeth (2013)",
@@ -486,19 +515,18 @@ run_lmtp_imp_data <- function(data, m, d, params){
 
 }
 
+# from https://rdrr.io/cran/mice/src/R/barnard.rubin.R
+barnard.rubin <- function(m, b, t, dfcom = Inf) {
+  lambda <- (1 + 1 / m) * b / t
+  lambda[lambda < 1e-04] <- 1e-04
+  dfold <- (m - 1) / lambda^2
+  dfobs <- (dfcom + 1) / (dfcom + 3) * dfcom * (1 - lambda)
+  ifelse(is.infinite(dfcom), dfold, dfold * dfobs / (dfold + dfobs))
+}
+
 
 
 pool_estimates <- function(df,mi=5){
-
-  # from https://rdrr.io/cran/mice/src/R/barnard.rubin.R
-  barnard.rubin <- function(m, b, t, dfcom = Inf) {
-    lambda <- (1 + 1 / m) * b / t
-    lambda[lambda < 1e-04] <- 1e-04
-    dfold <- (m - 1) / lambda^2
-    dfobs <- (dfcom + 1) / (dfcom + 3) * dfcom * (1 - lambda)
-    ifelse(is.infinite(dfcom), dfold, dfold * dfobs / (dfold + dfobs))
-  }
-
   df %>%
     group_by(contrast,.groups = 'keep') %>%
     dplyr::mutate(variance= std.error^2,
@@ -519,6 +547,34 @@ pool_estimates <- function(df,mi=5){
                   conf.high, p.value= p.combined) %>%
     ungroup()
 }
+
+
+pool_marginal <- function(res,mi=5){
+
+  res %>%
+    pivot_longer(-imp, names_to = "d") %>%
+    mutate(
+      est= map_dbl(.x=value, ~.x$theta,),
+           se= map_dbl(.x=value, ~.x$standard_error)) %>%
+
+    mutate(variance= se^2) %>%
+    group_by(d) %>%
+    summarise(
+      qbar = mean(est),
+      ubar = mean(variance), # Within imputation variance
+      b = var(est), # Between imputation variance
+      t = ubar + (1 + 1 / mi) * b, # Total variance
+      SE.combined = sqrt(t),
+      df = barnard.rubin(mi, b, t), #df correction
+      conf.low = qbar - qt(0.975, df)*SE.combined,
+      conf.high = qbar + qt(0.975, df)*SE.combined) %>%
+    dplyr::select(Scenario=d, tmle_estimate= qbar,conf.low,
+                  conf.high) %>%
+    ungroup() %>%
+    mutate(across(where(is.numeric), ~round(.x,digits = 3) ))
+
+}
+
 
 
 get_table2_data <- function(df){
@@ -577,6 +633,29 @@ get_table2 <- function(df){
   print(doc, target = fileout)
 
 }
+
+
+quick_table <- function(df,file="tab"){
+
+  flextable::set_flextable_defaults(
+    font.family = "Arial" ,
+    font.size = 11,
+    text.align = "left",
+    table.layout = "autofit",
+    line_spacing= 0.9)
+
+  tab<- df %>% flextable()
+  doc <- officer::read_docx()
+  doc <- flextable::body_add_flextable(doc, value = tab)
+  fileout <- glue::glue("tables/{file}.docx") # write in your working directory
+
+  print(doc, target = fileout)
+
+
+}
+
+
+
 
 
 plot_or <- function(df){
