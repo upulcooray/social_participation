@@ -204,7 +204,7 @@ set.seed(198511110)
 # Starting the list of targets--------------------------------------------------
 list(
   tar_target(df_file,
-             "data/selected.csv",
+             read_dta("~/Desktop/JAGES_data/10-13-16panel_with_datsuraku.dta"),
              format = "file")
   ,
   # Working data -------------------------------------------------------------
@@ -492,8 +492,7 @@ list(
 #
   ,
 
-tar_target(results_sl,
-
+tar_target(res,
            cbind(imp= imps$imp,
                  d0= tmle_d0_sl$tmle,
                  d1= tmle_d1_sl$tmle,
@@ -506,7 +505,13 @@ tar_target(results_sl,
                  d4= tmle_d4_sl$tmle,
                  d5= tmle_d5_sl$tmle) %>%
              as_tibble() %>%
-             unnest(imp) %>%
+             unnest(imp)
+)
+
+,
+
+tar_target(results_sl,
+            res %>%
              mutate(
                d0_vs_d1= map2(d1,d0,~lmtp::lmtp_contrast(.x,ref = .y, type="or")),
                d0_vs_d1_2= map2(d1_2,d0,~lmtp::lmtp_contrast(.x,ref = .y, type="or")),
@@ -524,17 +529,29 @@ tar_target(results_sl,
              unnest(cols = results) %>%
              pool_estimates()
 )
+
+
 ,
 
 tar_target(table2_data,
            get_table2_data(results_sl))
-
 ,
 
 tar_target(table_2,
            get_table2(table2_data),
            format= "file")
 ,
+
+tar_target(marginal_estimates,
+
+           res %>%
+             pool_marginal() %>%
+             filter(Scenario!="d4") %>%
+             mutate(Scenario= c("Observed", paste("Scenario",1:8, sep = " "))) %>%
+             quick_table(file = "appendix_table2"))
+
+,
+
 
 tar_target(figure_3,
            plot_or(table2_data),
