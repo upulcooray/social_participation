@@ -72,14 +72,13 @@ get_descriptive_data <- function(df){
       c2 = dplyr::if_else(C2==1,1,0),
       w_age = age_ysl10,
       w_sex = sex_2_10,
-      w_educ= ifelse(educ5_10==5,NA,educ5_10),
-      w_vision= dgns2vi10,
-      w_hear= dgns2vi10) %>%
+      w_educ= ifelse(educ5_10==5,NA,educ5_10)) %>%
     select(starts_with(c("w_", "L0_", "A0_","c1","A1_","L1_","c2","Y2_")), Y2) %>%
     mutate(c2= ifelse(c1==0,0,c2)) %>%
     mutate_at(vars(contains(c("L1","A1_","Y2"))),
               ~ifelse(c1==0 , NA,.)) %>%
-    mutate(Y2= ifelse(c2==0 ,NA,Y2)) %>%
+    mutate(Y2= ifelse(c2==0 ,NA,Y2),
+           Y2_week= ifelse(c2==0 ,NA,Y2_week)) %>%
     mutate(
       w_sex= factor(w_sex- 1, levels = c(0,1), labels = c("Male","Female")),  # make sex 0=male 1=female
       w_educ= factor(w_educ,
@@ -108,7 +107,7 @@ get_descriptive_data <- function(df){
              labels= c("Married",
                        "Widowed,divorced, or unmarried")),
       across(c(w_y0,
-               Y2,
+               Y2,Y2_week,
                ends_with(c("vision","hear","cancer", "heart", "stroke"))),
              factor,
              levels = c(1,0),
@@ -202,7 +201,9 @@ get_labelled_data <- function(df){
                     A1_teeth= "Number of teeth (2013)",
                     L0_den= "Denture status (2010)",
                     L1_den= "Denture status (2013)",
-                    Y2= "Social participation in 2016")
+                    Y2= "Social participation in 2016",
+                    Y2_week= "Social participation in 2016 (week)"
+                    )
 
   arsenal::labels(df) <- varlabels
 
@@ -369,14 +370,10 @@ flow_chart <- function(df){
 # Table 1-------
 get_table1 <- function(df,y_var,file_name){
 
-  x<- df %>% select(contains(c("age",
-                               "0_inc",
-                               "sex",
-                               "A0_teeth",
-                               "educ",
-                               "0_srh",
-                               "0_mari",
-                               "w_y0"))) %>% colnames()
+  x<- df %>% select(starts_with(c("w_","L0_"))) %>%
+    select(contains(c("age","sex", "inc", "educ")),everything()) %>%
+    colnames()
+
   y <- y_var
 
   form <- as.formula(paste(y, paste(x, collapse="+"), sep="~"))
@@ -387,7 +384,8 @@ get_table1 <- function(df,y_var,file_name){
                                                 "10-19 teeth",
                                                 "1-9 teeth",
                                                 "Edentate"))) %>%
-    mutate(w_educ= fct_rev(w_educ))
+    mutate(w_educ= fct_rev(w_educ),
+           L0_membr= factor(L0_membr,ordered = T))
 
   if(".imp" %in% colnames(df)){
     res<- compareGroups::compareGroups(formula = form,
@@ -592,7 +590,7 @@ get_table2_data <- function(df){
 
 
 
-get_table2 <- function(df){
+get_table2 <- function(df, file= "table_2"){
 
   flextable::set_flextable_defaults(
     font.family = "Arial" ,
@@ -628,7 +626,7 @@ get_table2 <- function(df){
                                  Scenario 8= What if everyone were edentate")
   doc <- officer::read_docx()
   doc <- flextable::body_add_flextable(doc, value = tab)
-  fileout <- "tables/table_2.docx" # write in your working directory
+  fileout <-  glue::glue("tables/{file}.docx") # write in your working directory
 
   print(doc, target = fileout)
 
@@ -658,7 +656,7 @@ quick_table <- function(df,file="tab"){
 
 
 
-plot_or <- function(df){
+plot_or <- function(df, file="figure_"){
 
   library(ggtext)
   what_ifs <- c("edentate were 1-9",
@@ -677,8 +675,8 @@ plot_or <- function(df){
   ymax <- unique(df$contrast) %>% length()
 
   df %>%
-    mutate( int= if_else(str_detect(contrast,
-                                    paste0(1:4)),
+    mutate( int= parse_number(contrast),
+            int= ifelse(int<5,
                          "Preventive scenarios","Tooth loss scenarios" ),
             contrast= recode(contrast,!!!x_tics),
             contrast= factor(contrast),
@@ -709,7 +707,7 @@ plot_or <- function(df){
     annotate("text",x=xmin-0.05,y= ymax+0.3,label="What if:")+
     coord_cartesian(xlim = c(xmin,xmax),clip="off")
 
-  ggsave("figures/figure_3.pdf",device = "pdf",width = 6, height = 7.5,dpi = 900)
+  ggsave(glue::glue("figures/{file}.svg"),device = "svg",width = 6, height = 7.5,dpi = 900)
 
 }
 
